@@ -151,7 +151,7 @@ If the above function outputs a 1 then every input bit was a 0, otherwise at lea
 
 To convert, run, and validate a bristol circuit in a taproot address we need several dependencies.
 
-```
+```javascript
 var sha256 = s => {
     if ( typeof s == "string" ) s = new TextEncoder().encode( s );
     return crypto.subtle.digest( 'SHA-256', s ).then( hashBuffer => {
@@ -250,7 +250,7 @@ document.getElementsByTagName('head')[0].appendChild(tapscript);
 
 Copy the circuit into a javascript string.
 
-```
+```javascript
 var arrprep = `
 127 191
 1 64 
@@ -388,7 +388,7 @@ var arrprep = `
 
 Run this code to convert each line into an array, define some needed variables using the first three lines, and then trim the circuit to just the logic gates.
 
-```
+```javascript
 var arr = arrprep.split( `\n`);
 if ( !arr[ 0 ] ) arr.splice( 0, 1 );
 if ( !arr[ arr.length - 1 ] ) arr.splice( arr.length - 1, 1 );
@@ -404,7 +404,7 @@ arr.splice( 0, 4 );
 
 For each gate in the array, map two arrays to it: an array of input hashes and an array of output hashes.
 
-```
+```javascript
 var wire_settings = {}
 var operations_array = [];
 setOperationsArray = async () => {
@@ -497,7 +497,7 @@ For example, in the operations array, operation 0 says its javascript function i
 
 Paul will need to create these bit commitments privately.
 
-```
+```javascript
 var initial_commitment_preimages = [];
 var initial_commitment_hashes = [];
 var generateBitCommitments = async () => {
@@ -530,7 +530,7 @@ Now Paul must share the commitment hashes with Vicky, namely, initial_commitment
 
 Paul and Vicky should both do this independently, then compare the bitcoin addresses to make sure they are the same.
 
-```
+```javascript
 var leaf1 = [
     "OP_10",
     "OP_CHECKSEQUENCEVERIFY",
@@ -603,7 +603,7 @@ var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtes
 
 Paul and Vicky should both do this independently, then compare the bitcoin addresses to make sure they are the same.
 
-```
+```javascript
 //todo: replace the last OP_1 with these two lines:
 //<Vicky’s key>
 //OP_CHECKSIG
@@ -655,7 +655,7 @@ var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "re
 
 # Generate the challenge address
 
-```
+```javascript
 var templates = {}
 //todo: replace the last OP_1 in each template with these two lines:
 //<"Vickys_key">
@@ -1149,7 +1149,7 @@ var challenge_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtest" );
 
 At this point, Paul should reveal his 64 input bits. Previously, he shared an array called "initial_commitment_hashes" with Vicky, but in that array he only committed to a hash representing 1 and a hash representing 0 -- he did not say which bits are actually 1s and which ones are 0s. Now he will do that by revealing the "1" preimage or the "0" preimage for each bit. In many circuits, Paul would do this by taking information from elsewhere; for example, if someone wanted Paul to reveal a blockhash at a certain height, he might wait til that blockheight arrives, then grab the blockhash, then use it to determine the input bits for his program. In the case of supplying 64 “0” bits, Paul just reveals all the preimages that correspond to 0.
 
-```
+```javascript
 var preimages_to_reveal = [];
 var wires = [];
 
@@ -1175,26 +1175,26 @@ Before doing the funding address I want to jump ahead: how will Vicky verify the
 
 Paul should reveal that array to Vicky and Vicky should remove duplicate preimages:
 
-```
+```javascript
 var preimages_from_paul = preimages_to_reveal;
 preimages_from_paul = removeDuplicates( preimages_from_paul );
 ```
 
 Then Vicky should take each revealed preimage and match it up with the tapleaves that use its hash. There is a function that does that up under dependencies, it is called compareTapleaves(), and the function I’m about to tell you about will run it. If any preimage has a hash that is not in *any* tapleaf, Vicky should discard it. There is a function for *that* up under dependencies too, it is called discardUnusedPreimages(), and this is where you should use it.
 
-```
+```javascript
 discardUnusedPreimages();
 ```
 
 Vicky *expects* a certain number of preimages from Paul. If, after discarding unused preimages, she has *less than* the right number of preimages, she should move Paul’s money to the bit commitment address to force Paul to give her the preimages she needs.
 
-```
+```javascript
 if ( preimages_from_paul.length < number_of_preimages_to_expect ) alert( "oh no! Go put your counterparty’s money in the bit commitment address!" );
 ```
 
 Once she has all the preimages she needs, she should make a mapping of each preimage to the tapleaves it is referenced in.
 
-```
+```javascript
 var preimages_and_their_tapleaves = [];
 preimages_from_paul.forEach( async preimage => {
     var tapleaves_it_is_in = await compareTapleaves( preimage, challenge_scripts );
@@ -1204,7 +1204,7 @@ preimages_from_paul.forEach( async preimage => {
 
 Next Vicky needs several things. One is what kind of operation is used in that tapleaf. She can get this by expanding upon the operations_array:
 
-```
+```javascript
 expanded_array = [];
 operations_array.forEach( item => {
     if ( item[ 0 ] == "INV" ) expanded_array.push( ["OP_NOT"],["OP_NOT"],["OP_NOT"],["OP_NOT"] );
@@ -1218,7 +1218,7 @@ Now, for each script in the script array, she can look up its corresponding oper
 
 Next, Vicky needs to run through each tapleaf in the preimages_and_their_tapleaves array and, for every index in it, she should add an entry to its corresponding operations_array referencing the preimages that are used in that tapleaf.
 
-```
+```javascript
 preimages_and_their_tapleaves.forEach( ( preimage, index ) => {
     preimage.forEach( num => {
         expanded_array[ num ].push( preimages_from_paul[ index ] );
@@ -1228,7 +1228,7 @@ preimages_and_their_tapleaves.forEach( ( preimage, index ) => {
 
 Vicky can’t run an OP_NOT without it having 2 preimages and she can’t run an OP_BOOLAND or an OP_XOR without it having 3 preimages. But she should not discard the un-runnable ones because that would throw off the indexing that makes these operations match their tapleaf counterparts in the challenge_scripts array. What she *should* do is put the preimages in the right order in the ones she *might* be able to run:
 
-```
+```javascript
 expanded_array.forEach( async ( item, operation_index ) => {
     if ( item[ 0 ] == "OP_NOT" && item.length == 3 ) {
         var hash_order = [];
@@ -1289,7 +1289,7 @@ Vicky can now check if Paul’s preimages allow her to spend Paul’s money usin
 
 Under dependencies there are functions called OP_NOT and OP_BOOLAND which are javascript variants of the OP_NOT and OP_BOOLAND functions I wrote in bitcoin script. If Vicky runs all of the OP_NOTs and OP_BOOLANDs that she has the preimages to, the functions will tell her if she can use Paul’s preimages to spend Paul’s money using the corresponding tapleaf.
 
-```
+```javascript
 expanded_array.forEach( async ( item, index ) => {
     if ( item[ 0 ] == "OP_NOT" && item.length == 3 ) {
         var i_can_spend = await OP_NOT( item[ 1 ], challenge_scripts[ index ][ 2 ], Number( challenge_scripts[ index ][ 4 ].substring( challenge_scripts[ index ][ 4 ].length - 1 ) ), item[ 2 ], challenge_scripts[ index ][ 8 ], Number( challenge_scripts[ index ][ 10 ].substring( challenge_scripts[ index ][ 10 ].length - 1 ) ) );
@@ -1308,7 +1308,7 @@ expanded_array.forEach( async ( item, index ) => {
 
 Vicky may want to identify the input and output bits for a given circuit. In the current circuit, all of the input bits are arguments to the OP_NOT functions, so she can get them like this:
 
-```
+```javascript
 var wires = [];
 var logInputs = async () => {
     //var input_prep = ``;
@@ -1338,7 +1338,7 @@ logInputs();
 
 Vicky can construct the boolean circuit in javascript and plug these inputs into it to get a 0 or a 1 as an output. Here is a js version of the circuit:
 
-```
+```javascript
 //var js_version = ``;
 var index; for ( index=0; index<arr.length; index++ ) {
     var gate = arr[ index ].split( " " ).filter( item => item );
