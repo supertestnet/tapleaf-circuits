@@ -994,6 +994,7 @@
             var earnings_txhex = null;
             var preimages_to_reveal = [];
             var wires = [];
+            var promise = null;
         </script>
     </head>
     <body>
@@ -1265,7 +1266,6 @@
                 vickys_key = $( '.vickys_key' ).value;
             }
             $( '.submit_all_or_none' ).onclick = () => {
-                console.log( 0 );
                 if ( promise == "All 0s" ) {
                     output_preimages = [ subsequent_commitment_preimages[ subsequent_commitment_preimages.length - 1 ][ 1 ] ];
                 } else {
@@ -1285,7 +1285,7 @@
                 $( '.zero_checker_step_one' ).classList.add( "hidden" );
                 $( '.zero_checker_step_two' ).classList.add( "hidden" );
                 $( '.zero_checker_step_three' ).classList.remove( "hidden" );
-                var promise = $( '.all_or_none' ).value;
+                promise = $( '.all_or_none' ).value;
                 $( '.step_six_promise_to_vicky' ).innerText = promise;
                 bit_commitment_address = generateBitCommitmentAddress( pubkey );
                 anti_contradiction_address = generateAntiContradictionAddress( pubkey );
