@@ -156,12 +156,12 @@
              display: inline-block;
              overflow: hidden;
         }
-        #file_label {
+        #file_label, #file_label_2 {
             display: block;
             text-align: center;
             cursor: pointer;
         }
-        #file_label:hover {
+        #file_label:hover, #file_label_2:hover {
             color: blue;
         }
          .js .box__file + label:hover strong, .box__file:focus + label strong, .box__file.has-focus + label strong {
@@ -240,6 +240,9 @@
         var challenge_address = null;
         var challenge_tpubkey = null;
         var challenge_cblock = null;
+        var preimages_from_paul = null;
+        var wires = [];
+        var challenge_scripts = null;
     </script>
     <script>
         var sha256 = s => {
@@ -1102,7 +1105,7 @@
                 OP_CHECKSIG
             `;
 
-            var challenge_scripts = [];
+            challenge_scripts = [];
 
             var i; for ( i=0; i<operations_array.length; i++ ) {
                 if ( operations_array[ i ][ 0 ] == "INV" ) {
@@ -1226,6 +1229,35 @@
             var funding_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtest" );
             return funding_address;
         }
+        var logInputs = async () => {
+            console.log( "logging inputs" );
+            //var input_prep = ``;
+            var j; for ( j=0; j<initial_commitment_hashes.length; j++ ) {
+                var index = j;
+                var input = initial_commitment_hashes[ index ];
+                //input_prep += `Input #${index + 1} is `;
+                var i; for ( i=0; i<preimages_from_paul.length; i++ ) {
+                    var preimage = preimages_from_paul[ i ];
+                    var hash = await sha256( hexToBytes( preimage ) );
+                    if ( hash == input[ 0 ] ) {
+                        wires[ i ] = 0;
+                        //input_prep += `0 because the preimage to ${input[ 0 ]} was revealed (its preimage is ${preimage})\n\n`;
+                        break;
+                    }
+                    if ( hash == input[ 1 ] ) {
+                        wires[ i ] = 1;
+                        //input_prep += `1 because the preimage to ${input[ 1 ]} was revealed (its preimage is ${preimage})\n\n`;
+                        break;
+                    }
+                }
+            }
+            //console.log( input_prep );
+        }
+        var waitSomeSeconds = num => {
+            var num = num.toString() + "000";
+            num = Number( num );
+            return new Promise( resolve => setTimeout( resolve, num ) );
+        }
     </script>
 </head>
 <body>
@@ -1254,7 +1286,7 @@
     </div>
     <div class="wait_for_sigs_div hidden">
         <p>
-            Paul will shortly send you a "signatures" file. Upload it here when he does.
+            Paul will shortly send you a "results" file. Upload it here when he does.
         </p>
         <form method="post" class="box">
             <div class="box__input">
@@ -1280,6 +1312,7 @@
         }
         $( '.address_verification_done' ).onclick = async () => {
             $( '.address_verification_div' ).classList.add( "hidden" );
+            $( '.wait_for_sigs_div' ).classList.remove( "hidden" );
             // $( '.zero_checker_step_two' ).classList.add( "hidden" );
             // $( '.zero_checker_step_three' ).classList.add( "hidden" );
             // $( '.zero_checker_step_four' ).classList.remove( "hidden" );
@@ -1320,7 +1353,118 @@
         function handleContent( file ) {
             readFileContent( file ).then( async content => {
                 var json = JSON.parse( content );
-                if ( "msg_type" in json && json[ "msg_type" ] == "signatures" ) {
+                if ( "msg_type" in json && json[ "msg_type" ] == "results" ) {
+                    preimages_from_paul = json[ "preimages_to_reveal" ];
+                    preimages_from_paul = removeDuplicates( preimages_from_paul );
+                    discardUnusedPreimages();
+                    if ( preimages_from_paul.length < number_of_preimages_to_expect ) return alert( "oh no! Go put your counterparty’s money in the bit commitment address!" );
+                    var preimages_and_their_tapleaves = [];
+                    var i; for ( i=0; i<preimages_from_paul.length; i++ ) {
+                        var preimage = preimages_from_paul[ i ];
+                        var tapleaves_it_is_in = await compareTapleaves( preimage, challenge_scripts );
+                        preimages_and_their_tapleaves.push( tapleaves_it_is_in );
+                    }
+                    expanded_array = [];
+                    operations_array.forEach( item => {
+                        if ( item[ 0 ] == "INV" ) expanded_array.push( ["OP_NOT"],["OP_NOT"],["OP_NOT"],["OP_NOT"] );
+                        if ( item[ 0 ] == "AND" ) expanded_array.push( ["OP_BOOLAND"],["OP_BOOLAND"],["OP_BOOLAND"],["OP_BOOLAND"], ["OP_BOOLAND"],["OP_BOOLAND"],["OP_BOOLAND"],["OP_BOOLAND"] );
+                        if ( item[ 0 ] == "XOR" ) expanded_array.push( ["OP_XOR"],["OP_XOR"],["OP_XOR"],["OP_XOR"], ["OP_XOR"],["OP_XOR"],["OP_XOR"],["OP_XOR"] );
+                    });
+                    expanded_array.push( "multisig" );
+                    preimages_and_their_tapleaves.forEach( ( preimage, index ) => {
+                        preimage.forEach( num => {
+                            expanded_array[ num ].push( preimages_from_paul[ index ] );
+                        });
+                    });
+                    var operation_index; for ( operation_index=0; operation_index<expanded_array.length; operation_index++ ) {
+                        console.log( operation_index );
+                        var item = expanded_array[ operation_index ];
+                        if ( item[ 0 ] == "OP_NOT" && item.length == 3 ) {
+                            var hash_order = [];
+                            challenge_scripts[ operation_index ].forEach( element => {
+                                if ( element.length == 64 ) hash_order.push( element );
+                            });
+                            if ( operation_index == 3 ) console.log( "hash_order:", hash_order )
+                            var preimages_in_order = [];
+                            var index; for ( index=0; index<expanded_array[ operation_index ].length; index++ ) {
+                                var preimage = expanded_array[ operation_index ][ index ];
+                                if ( index ) {
+                                    var hash = await sha256( hexToBytes( preimage ) );
+                                    hash_order.forEach( ( ordered_hash, hash_index ) => {
+                                        if ( ordered_hash == hash ) preimages_in_order[ hash_index ] = preimage;
+                                    });
+                                }
+                            }
+                            expanded_array[ operation_index ] = ["OP_NOT", ...preimages_in_order];
+                            if ( operation_index == 3 ) console.log( "preimages in order:", preimages_in_order );
+                        }
+                        if ( item[ 0 ] == "OP_BOOLAND" && item.length == 4 ) {
+                            var hash_order = [];
+                            challenge_scripts[ operation_index ].forEach( element => {
+                                if ( element.length == 64 ) hash_order.push( element );
+                            });
+                            var preimages_in_order = [];
+                            var index; for ( index=0; index<expanded_array[ operation_index ].length; index++ ) {
+                                var preimage = expanded_array[ operation_index ][ index ];
+                                if ( index ) {
+                                    var hash = await sha256( hexToBytes( preimage ) );
+                                    hash_order.forEach( ( ordered_hash, hash_index ) => {
+                                        if ( ordered_hash == hash ) preimages_in_order[ hash_index ] = preimage;
+                                    });
+                                }
+                            }
+                            expanded_array[ operation_index ] = ["OP_BOOLAND", ...preimages_in_order];
+                        }
+                        if ( item[ 0 ] == "OP_XOR" && item.length == 4 ) {
+                            var hash_order = [];
+                            challenge_scripts[ operation_index ].forEach( element => {
+                                if ( element.length == 64 ) hash_order.push( element );
+                            });
+                            var preimages_in_order = [];
+                            var index; for ( index=0; index<expanded_array[ operation_index ].length; index++ ) {
+                                var preimage = expanded_array[ operation_index ][ index ];
+                                if ( index ) {
+                                    var hash = await sha256( hexToBytes( preimage ) );
+                                    hash_order.forEach( ( ordered_hash, hash_index ) => {
+                                        if ( ordered_hash == hash ) preimages_in_order[ hash_index ] = preimage;
+                                    });
+                                }
+                            }
+                            expanded_array[ operation_index ] = ["OP_XOR", ...preimages_in_order];
+                        }
+                    }
+                    var index; for ( index=0; index<expanded_array.length; index++ ) {
+                        var item = expanded_array[ index ];
+                        if ( item[ 0 ] == "OP_NOT" && item.length == 3 ) {
+                            var i_can_spend = await OP_NOT( item[ 1 ], challenge_scripts[ index ][ 2 ], Number( challenge_scripts[ index ][ 4 ].substring( challenge_scripts[ index ][ 4 ].length - 1 ) ), item[ 2 ], challenge_scripts[ index ][ 8 ], Number( challenge_scripts[ index ][ 10 ].substring( challenge_scripts[ index ][ 10 ].length - 1 ) ) );
+                            if ( i_can_spend.startsWith( "you can spend" ) ) {alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_NOT tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );}
+                        }
+                        if ( item[ 0 ] == "OP_BOOLAND" && item.length == 4 ) {
+                            var i_can_spend = await OP_BOOLAND( item[ 1 ], challenge_scripts[ index ][ 2 ], Number( challenge_scripts[ index ][ 4 ].substring( challenge_scripts[ index ][ 4 ].length - 1 ) ), item[ 2 ], challenge_scripts[ index ][ 7 ], Number( challenge_scripts[ index ][ 9 ].substring( challenge_scripts[ index ][ 9 ].length - 1 ) ), item[ 3 ], challenge_scripts[ index ][ 13 ], Number( challenge_scripts[ index ][ 15 ].substring( challenge_scripts[ index ][ 15 ].length - 1 ) ) );
+                            if ( i_can_spend.startsWith( "you can spend" ) ) {alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_BOOLAND tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );}
+                        }
+                        if ( item[ 0 ] == "OP_XOR" && item.length == 4 ) {
+                            var i_can_spend = await OP_XOR( item[ 1 ], challenge_scripts[ index ][ 2 ], Number( challenge_scripts[ index ][ 4 ].substring( challenge_scripts[ index ][ 4 ].length - 1 ) ), item[ 2 ], challenge_scripts[ index ][ 7 ], Number( challenge_scripts[ index ][ 9 ].substring( challenge_scripts[ index ][ 9 ].length - 1 ) ), item[ 3 ], challenge_scripts[ index ][ 13 ], Number( challenge_scripts[ index ][ 15 ].substring( challenge_scripts[ index ][ 15 ].length - 1 ) ) );
+                            if ( i_can_spend.startsWith( "you can spend" ) ) {alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_XOR tapleaf, but I cannot spend with it, meaning its calculations were done correctly` );}
+                        }
+                    }
+                    await logInputs();
+                    var index; for ( index=0; index<arr.length; index++ ) {
+                        console.log( "running circuit" );
+                        var gate = arr[ index ].split( " " ).filter( item => item );
+                        if ( gate[ gate.length - 1 ] == "INV" ) {
+                            wires[ gate[ 3 ] ] = eval( `INV( wires[ ${gate[ 2 ]} ] )` );
+                            //js_version += `wires[ ${gate[ 3 ]} ] = INV( wires[ ${gate[ 2 ]} ] )\n`;
+                        }
+                        if ( gate[ gate.length - 1 ] == "AND" ) {
+                            wires[ gate[ 4 ] ] = eval( `AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )` );
+                            //js_version += `wires[ ${gate[ 4 ]} ] = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )\n`;
+                        }
+                        if ( gate[ gate.length - 1 ] == "XOR" ) {
+                            wires[ gate[ 4 ] ] = eval( `XOR( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )` );
+                            //js_version += `wires[ ${gate[ 4 ]} ] = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )\n`;
+                        }
+                    }
                     return;
                 }
                 console.log( json );
