@@ -1320,7 +1320,7 @@
         function handleContent( file ) {
             readFileContent( file ).then( async content => {
                 var json = JSON.parse( content );
-                if ( msg_type in json && json[ "msg_type" ] == "signatures" ) {
+                if ( "msg_type" in json && json[ "msg_type" ] == "signatures" ) {
                     return;
                 }
                 console.log( json );
