@@ -1427,7 +1427,7 @@
                 //these other addresses, so she should validate his signatures before doing
                 //that swap -- not to mention independently construct all these txs so she
                 //has an independent copy of the sighash to compare the sig against
-                alert( `Please broadcast this tx to fund the contract:`, starter_txhex );
+                alert( `Please broadcast this tx to fund the contract:\n\n${starter_txhex}` );
                 var preimages_to_reveal = prompt( `What preimages do you want to reveal to Vicky?` );
                 var message_to_vicky = {
                     msg_type: "results",
@@ -1447,7 +1447,7 @@
                 }
                 alert( `You are about to be prompted to download a file called results_file.txt. Do so and send it to Vicky.` );
                 saveData( JSON.stringify( message_to_vicky ), "results_file.txt" )
-                alert( `After 10 blocks broadcast this tx to collect your money if you sent the right data to Vicky (otherwise, expect Vicky to take your money):`, earnings_txhex );
+                alert( `After 10 blocks broadcast this tx to collect your money if you sent the right data to Vicky (otherwise, expect Vicky to take your money):\n\n${earnings_txhex}` );
             }
         </script>
     </body>
