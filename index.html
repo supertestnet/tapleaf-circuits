@@ -36,6 +36,9 @@
             .program {
                 word-break: break-word;
             }
+            .p_buttons {
+                margin: 0.5rem;
+            }
             @media screen and (max-width: 600px) {
             }
         </style>
@@ -328,7 +331,7 @@
                 bit_commitment_cblock = cblock;
                 var [ tpubkey, alt_cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, commitment_to_anywhere_else_tapleaf });
                 commitment_to_anywhere_else_cblock = alt_cblock;
-                var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
+                var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, network );
                 return bit_commitment_address;
             }
 
@@ -381,7 +384,7 @@
                 var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
                 anti_contradiction_tpubkey = tpubkey;
                 anti_contradiction_cblock = cblock;
-                var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
+                var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, network );
                 return anti_contradiction_address;
             }
 
@@ -893,7 +896,7 @@
                 var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
                 challenge_tpubkey = tpubkey;
                 challenge_cblock = cblock;
-                var challenge_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
+                var challenge_address = tapscript.Address.p2tr.fromPubKey( tpubkey, network );
                 return challenge_address;
             }
 
@@ -935,7 +938,7 @@
                 funding_to_paul_cblock = cblock;
                 var [ tpubkey, alt_cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, funding_to_anywhere_else_tapleaf });
                 funding_to_anywhere_else_cblock = alt_cblock;
-                var funding_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
+                var funding_address = tapscript.Address.p2tr.fromPubKey( tpubkey, network );
                 return funding_address;
             }
 
@@ -944,8 +947,107 @@
                 num = Number( num );
                 return new Promise( resolve => setTimeout( resolve, num ) );
             }
+
+            async function addressOnceHadMoney( address, network ) {
+                var nonjson = await getData( "https://mutinynet.com/" + network + "api/address/" + address );
+                var json = JSON.parse( nonjson );
+                if ( json[ "chain_stats" ][ "tx_count" ] > 0 || json[ "mempool_stats" ][ "tx_count" ] > 0 ) return true;
+                return false;
+            }
+
+            async function loopTilAddressReceivesMoney( address, network ) {
+                var itReceivedMoney = false;
+                async function isDataSetYet( data_i_seek ) {
+                    return new Promise( ( resolve, reject ) => {
+                        if ( !data_i_seek ) {
+                            setTimeout( async () => {
+                                console.log( "waiting for address to receive money..." );
+                                try {
+                                    itReceivedMoney = await addressOnceHadMoney( address, network );
+                                }catch(e){}
+                                var msg = await isDataSetYet( itReceivedMoney );
+                                resolve( msg );
+                            }, 2000);
+                        } else {
+                            resolve( data_i_seek );
+                        }
+                    });
+                }
+
+                async function getTimeoutData() {
+                    var data_i_seek = await isDataSetYet(itReceivedMoney);
+                    return data_i_seek;
+                }
+
+                let returnable = await getTimeoutData();
+                return returnable;
+            }
+
+            async function addressReceivedMoneyInThisTx( address, network ) {
+                var txid;
+                var vout;
+                var amt;
+                var nonjson = await getData( "https://mutinynet.com/" + network + "api/address/" + address + "/txs" );
+                var json = JSON.parse( nonjson );
+                json.forEach( tx => {
+                    tx["vout"].forEach(function ( output, index ) {
+                        if ( output["scriptpubkey_address"] == address ) {
+                            txid = tx["txid"];
+                            vout = index;
+                            amt = output["value"];
+                        }
+                    });
+                });
+                return [txid, vout, amt];
+            }
+
+            function getData( url ) {
+                return new Promise( async function( resolve, reject ) {
+                    function inner_get( url ) {
+                        var xhttp = new XMLHttpRequest();
+                        xhttp.open( "GET", url, true );
+                        xhttp.send();
+                        return xhttp;
+                    }
+                    var data = inner_get( url );
+                    data.onerror = function( e ) {
+                        resolve( "error" );
+                    }
+                    async function isResponseReady() {
+                        return new Promise( function( resolve2, reject ) {
+                            if ( !data.responseText || data.readyState != 4 ) {
+                                setTimeout( async function() {
+                                    var msg = await isResponseReady();
+                                    resolve2( msg );
+                                }, 1 );
+                            } else {
+                                resolve2( data.responseText );
+                            }
+                        });
+                    }
+                    var returnable = await isResponseReady();
+                    resolve( returnable );
+                });
+            }
+            function pushBTCpmt( rawtx ) {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if ( this.readyState == 4 && ( this.status > 199 && this.status < 300 ) ) {
+                        var response = this.responseText;
+                        console.log( "Your transaction was broadcasted, your txid is: " + response );
+                    }
+                };
+                xhttp.open( "POST", "https://mutinynet.com/api/tx", true );
+                xhttp.send( rawtx );
+            }
+            async function getBlockheight( network ) {
+                var data = await getData( `https://mutinynet.com/${network}api/blocks/tip/height` );
+                return Number( data );
+            }
         </script>
         <script>
+            var network = "testnet";
+            if ( $_GET[ "network" ] == "regtest" ) network = "regtest";
             var arrprep = ``;
             var arr = [];
             var number_of_preimages_to_expect = null;
@@ -985,7 +1087,7 @@
             var challenge_script = null;
             var privkey = getRand( 32 );
             var pubkey = nobleSecp256k1.getPublicKey( privkey, true ).substring( 2 );
-            var starter_address = tapscript.Address.p2tr.encode( pubkey, "testnet" );
+            var starter_address = tapscript.Address.p2tr.encode( pubkey, network );
             var vickys_key = null;
             var starter_txid = null;
             var starter_vout = null;
@@ -1011,7 +1113,7 @@
                 <li>Otherwise, act as the verifier to take the money by producing the error</li>
             </ol>
             <h2>Pick a program you want to run</h2>
-            <p><button class="view_zero_checker">Zero checker</button> <button class="view_size_checker" disabled>Size checker (coming soon)</button> <button class="view_addition" disabled>Addition (coming soon)</button></p>
+            <p><button class="view_zero_checker p_buttons">Zero checker</button> <button class="view_size_checker p_buttons" disabled>Size checker (coming soon)</button> <button class="view_addition p_buttons" disabled>Addition (coming soon)</button></p>
             <div class="zero_checker hidden">
                 <h3 class="zero_checker_label">
                     Zero checker
@@ -1046,7 +1148,11 @@
                 <p>
                     In this demo you will play as Paul, the prover. The first step is to open up the page where Vicky -- the verifier -- will verify your program, and copy her public key, and paste it here
                 </p>
-                <p>Visit Vicky's page: <a href="./vicky.html" target="_blank">Vicky page</a></p>
+                <p>Visit Vicky's page: <a class="vicky_link" href="./vicky.html" target="_blank">Vicky page</a></p>
+                <script>
+                    $( '.vicky_link' ).href = "./vicky.html";
+                    if ( $_GET[ "network" ] ) $( '.vicky_link' ).href = `./vicky.html?network=${$_GET[ "network" ]}`;
+                </script>
                 <p>Enter Vicky's public key</p>
                 <p><input class="vickys_key"></p>
                 <p><button class="zero_checker_step_one_done">Done</button></p>
@@ -1074,10 +1180,10 @@
             </div>
             <div class="zero_checker_step_four hidden">
                 <p>
-                    Send 10000 sats to the following address to start the contract:
+                    Send *PRECISELY* 10,000 sats to the following address to start the contract (if you send the wrong amount it will not work):
                 </p>
                 <div class="funding_address_in_step_four">loading...</div>
-                <p>Asking for txid and vout in 3 seconds</p>
+                <p class="asking_for_txid">Asking for txid and vout in 3 seconds</p>
             </div>
             <div class="zero_checker_step_five hidden">
                 <p>
@@ -1286,6 +1392,7 @@
                 $( '.zero_checker_step_one' ).classList.add( "hidden" );
                 $( '.zero_checker_step_two' ).classList.add( "hidden" );
                 $( '.zero_checker_step_three' ).classList.remove( "hidden" );
+                promise = $( '.all_or_none' ).value;
                 $( '.step_six_promise_to_vicky' ).innerText = promise.toLowerCase();
                 bit_commitment_address = generateBitCommitmentAddress( pubkey );
                 anti_contradiction_address = generateAntiContradictionAddress( pubkey );
@@ -1310,12 +1417,21 @@
                 $( '.zero_checker_step_four' ).classList.remove( "hidden" );
                 $( '.funding_address_in_step_four' ).innerText = starter_address;
                 console.log( "starter address:", starter_address );
+                $( '.asking_for_txid' ).innerHTML = `If you are looking for testnet coins, try this faucet: <a href="https://faucet.mutinynet.com/" target="_blank">https://faucet.mutinynet.com</a>`;
                 await waitSomeSeconds( 3 );
-                var txid = prompt( `What was the txid?` );
-                var vout = prompt( `And the vout?` );
+                if ( $_GET[ "network" ] == "regtest" ) {
+                    var txid = prompt( `What was the txid?` );
+                    var vout = prompt( `And the vout?` );
+                    vout = Number( vout );
+                } else {
+                    await loopTilAddressReceivesMoney( starter_address, "" );
+                    await waitSomeSeconds( 2 );
+                    var txinfo = await addressReceivedMoneyInThisTx( starter_address, "" );
+                    var txid = txinfo[ 0 ];
+                    var vout = txinfo[ 1 ];
+                }
                 $( '.zero_checker_step_four' ).classList.add( "hidden" );
                 $( '.zero_checker_step_five' ).classList.remove( "hidden" );
-                vout = Number( vout );
                 var amt = 10_000;
                 var starter_txdata = tapscript.Tx.create({
                   vin  : [{
@@ -1461,6 +1577,8 @@
                 //that swap. She should also independently construct all the txs above so
                 //she has an independent copy of the sighashes to compare each sig against
                 $( '.starter_txhex' ).innerText = starter_txhex;
+                setTimeout( () => {pushBTCpmt( starter_txhex, "" );}, 2000 );
+                $( '.zero_checker_step_five_done' ).click();
                 presigned_tx_sigs = {
                     funding_to_bit_commitment_sig: funding_to_bit_commitment_sig.hex,
                     funding_to_anti_contradiction_sig: funding_to_anti_contradiction_sig.hex,
@@ -1502,8 +1620,9 @@
                     signatures: presigned_tx_sigs,
                 }
                 alert( `You are about to be prompted to download a file called results_file.txt. Do so and send it to Vicky.` );
+                var blockheight = await getBlockheight( "" );
                 saveData( JSON.stringify( message_to_vicky ), "results_file.txt" );
-                $( '.zero_checker_step_six' ).innerHTML = `<p>After 10 blocks broadcast this tx to collect your money if you sent the right data to Vicky (otherwise, expect Vicky to take your money):</p><p>${earnings_txhex}</p>`;
+                $( '.zero_checker_step_six' ).innerHTML = `<p>After 10 blocks (so in block <span class="current_blockheight">${blockheight + 11}</span>) <a href="https://mutinynet.com/tx/push" target="_blank">go here</a> and broadcast this tx to collect your money if you sent the right data to Vicky (otherwise, expect Vicky to take your money):</p><p>${earnings_txhex}</p><p>While you wait, you can view the current blockheight here: <a href="https://mutinynet.com" target="_blank">https://mutinynet.com</a> (mutinynet is a bitcoin testnet where blocks arrive about every 30 seconds).</p>`;
             }
             $( '.vickys_key' ).value = "";
             $( '.zero_checker_revelation_string' ).value = "";
