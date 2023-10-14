@@ -1603,6 +1603,10 @@
             }
             $( '.zero_checker_step_six_done' ).onclick = async () => {
                 var string = $( '.zero_checker_revelation_string' ).value;
+                if ( string.length != 64 ) {
+                    alert( `You didn't enter enough characters! Enter exactly 64 characters` );
+                    return;
+                }
                 var stringarr = string.split( "" );
                 stringarr.forEach( ( item, index ) => stringarr[ index ] = Number( item ) );
                 initial_commitment_preimages.forEach( ( preimage_pair, index ) => {
