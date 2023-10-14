@@ -213,6 +213,8 @@
         for ( var key of url_keys ) $_GET[ key ] = url_params.get( key );
     </script>
     <script>
+        var network = "testnet";
+        if ( $_GET[ "network" ] == "regtest" ) network = "regtest";
         var arrprep = ``;
         var arr = [];
         var number_of_preimages_to_expect = null;
@@ -669,7 +671,7 @@
             var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
             bit_commitment_tpubkey = tpubkey;
             bit_commitment_cblock = cblock;
-            var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
+            var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, network );
             return bit_commitment_address;
         }
 
@@ -721,7 +723,7 @@
             var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
             anti_contradiction_tpubkey = tpubkey;
             anti_contradiction_cblock = cblock;
-            var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
+            var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, network );
             return anti_contradiction_address;
         }
 
@@ -1232,7 +1234,7 @@
             var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
             challenge_tpubkey = tpubkey;
             challenge_cblock = cblock;
-            var challenge_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
+            var challenge_address = tapscript.Address.p2tr.fromPubKey( tpubkey, network );
             return challenge_address;
         }
 
@@ -1269,7 +1271,7 @@
             var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
             funding_tpubkey = tpubkey;
             funding_cblock = cblock;
-            var funding_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
+            var funding_address = tapscript.Address.p2tr.fromPubKey( tpubkey, network );
             return funding_address;
         }
         var logInputs = async () => {
@@ -1415,8 +1417,8 @@
                     discardUnusedPreimages();
                     //todo: actually give Vicky a transaction to broadcast here
                     if ( preimages_from_paul.length < number_of_preimages_to_expect ) return alert( "oh no! Go put your counterparty’s money in the bit commitment address!" );
-                    //todo: also give Vicky transactions to broadcast if Paul doesn't do his bit commitments in time
-                    //todo: also make the circuits reusable so that Vicky and Paul don't force close ine very transaction
+                    //todo: also give Vicky a transaction to broadcast if Paul doesn't do his bit commitments in time
+                    //todo: also make the circuits reusable so that Vicky and Paul don't force close in every transaction
                     var preimages_and_their_tapleaves = [];
                     var i; for ( i=0; i<preimages_from_paul.length; i++ ) {
                         var preimage = preimages_from_paul[ i ];
@@ -1526,7 +1528,9 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_NOT tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
                                 if ( paul_lied ) continue;
                                 paul_lied = true;
-                                $( '.wait_for_sigs_div' ).innerHTML = `<p>Broadcast these 2 transactions:</p><p>${to_challenge_txhex}</p><p>${txhex}</p>`;
+                                pushBTCpmt( to_challenge_txhex, "" );
+                                setTimeout( () => {pushBTCpmt( txhex, "" )}, 3000 );
+                                $( '.wait_for_sigs_div' ).innerHTML = `<p>You're all set! Your transactions have been broadcasted and, at any moment, your money should show up in the address you designated.</p>`;
                             }
                         }
                         if ( item[ 0 ] == "OP_BOOLAND" && item.length == 4 ) {
@@ -1562,7 +1566,9 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_BOOLAND tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
                                 if ( paul_lied ) continue;
                                 paul_lied = true;
-                                $( '.wait_for_sigs_div' ).innerHTML = `<p>Broadcast these 2 transactions:</p><p>${to_challenge_txhex}</p><p>${txhex}</p>`;
+                                pushBTCpmt( to_challenge_txhex, "" );
+                                setTimeout( () => {pushBTCpmt( txhex, "" )}, 3000 );
+                                $( '.wait_for_sigs_div' ).innerHTML = `<p>You're all set! Your transactions have been broadcasted and your money should show up in the address you designated at any moment.</p>`;
                             }
                         }
                         if ( item[ 0 ] == "OP_XOR" && item.length == 4 ) {
@@ -1598,7 +1604,9 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_XOR tapleaf, but I cannot spend with it, meaning its calculations were done correctly` );
                                 if ( paul_lied ) continue;
                                 paul_lied = true;
-                                $( '.wait_for_sigs_div' ).innerHTML = `<p>Broadcast these 2 transactions:</p><p>${to_challenge_txhex}</p><p>${txhex}</p>`;
+                                pushBTCpmt( to_challenge_txhex, "" );
+                                setTimeout( () => {pushBTCpmt( txhex, "" )}, 3000 );
+                                $( '.wait_for_sigs_div' ).innerHTML = `<p>You're all set! Your transactions have been broadcasted and your money should show up in the address you designated at any moment.</p>`;
                             }
                         }
                     }
@@ -1649,10 +1657,10 @@
                     return;
                 }
                 console.log( json );
-                pauls_key = json[ "pauls_key" ];
-                initial_commitment_hashes = json[ "initial_commitment_hashes" ];
-                subsequent_commitment_hashes = json[ "subsequent_commitment_hashes" ];
                 program = json[ "program" ];
+                initial_commitment_hashes = json[ "initial_commitment_hashes" ];
+                pauls_key = json[ "pauls_key" ];
+                subsequent_commitment_hashes = json[ "subsequent_commitment_hashes" ];
                 pauls_promise = json[ "promise" ];
                 var pubkey = window.vickys_key;
                 bit_commitment_address = generateBitCommitmentAddress( pubkey );
@@ -1814,11 +1822,18 @@
                     questionable_hashes.push( hash );
                 }
                 var preimages_found = 0;
+                var output = ``;
+                if ( wire_hashes.length != number_of_preimages_to_expect ) {
+                    alert( `The program they sent you is invalid. Aborting and starting over.` );
+                    window.location.reload();
+                    return;
+                }
                 var i; for ( i=number_of_preimages_to_expect-number_of_outputs; i<number_of_preimages_to_expect; i++ ) {
-                    wire_hashes[ i ].every( expected_hash => {
+                    wire_hashes[ i ].every( ( expected_hash, index ) => {
                         var j; for ( j=0; j<questionable_hashes.length; j++ ) {
                             if ( expected_hash == questionable_hashes[ j ] ) {
                                 preimages_found = preimages_found + 1;
+                                output += String( index );
                                 return;
                             }
                         }
@@ -1831,6 +1846,18 @@
                     return;
                 }
                 questionable_preimages.forEach( item => preimages_from_paul.push( item ) );
+                var message = `Someone wants to run a program with you called "${program}."`;
+                if ( program == "zero checker" ) {
+                    var is_or_is_not = "is";
+                    if ( !Number( output ) ) is_or_is_not = "is not";
+                    message += ` They promise to send you a string which ${is_or_is_not} just a bunch of zeros. They'll put up a bond to show they mean it, and if they break their promise, you can prove they lied and take their money.`
+                }
+                message += ` Do you want to try it?`;
+                var conf = confirm( message );
+                if ( !conf ) {
+                    window.location.reload();
+                    return;
+                }
                 challenge_address = generateChallengeAddress( pubkey );
                 var html = `
                     <p>Funding address: ${funding_address}</p>
@@ -2019,6 +2046,34 @@
                 }
                 return true;
         }
+        function getData( url ) {
+            return new Promise( async function( resolve, reject ) {
+                function inner_get( url ) {
+                    var xhttp = new XMLHttpRequest();
+                    xhttp.open( "GET", url, true );
+                    xhttp.send();
+                    return xhttp;
+                }
+                var data = inner_get( url );
+                data.onerror = function( e ) {
+                    resolve( "error" );
+                }
+                async function isResponseReady() {
+                    return new Promise( function( resolve2, reject ) {
+                        if ( !data.responseText || data.readyState != 4 ) {
+                            setTimeout( async function() {
+                                var msg = await isResponseReady();
+                                resolve2( msg );
+                            }, 1 );
+                        } else {
+                            resolve2( data.responseText );
+                        }
+                    });
+                }
+                var returnable = await isResponseReady();
+                resolve( returnable );
+            });
+        }
         function pushBTCpmt( rawtx ) {
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function() {
@@ -2027,7 +2082,7 @@
                     console.log( "Your transaction was broadcasted, your txid is: " + response );
                 }
             };
-            xhttp.open( "POST", "https://mempool.space/api/tx", true );
+            xhttp.open( "POST", "https://mutinynet.com/api/tx", true );
             xhttp.send( rawtx );
         }
     </script>
