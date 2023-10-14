@@ -228,6 +228,7 @@
         var copy_of_subsequent_commitment_preimages = [];
         var copy_of_subsequent_commitment_hashes = [];
         var pauls_key = null;
+        var funding_scripts = null;
         var funding_address = null;
         var funding_tpubkey = null;
         var funding_block = null;
@@ -240,9 +241,13 @@
         var challenge_address = null;
         var challenge_tpubkey = null;
         var challenge_cblock = null;
-        var preimages_from_paul = null;
+        var preimages_from_paul = [];
         var wires = [];
         var challenge_scripts = null;
+        var to_challenge_txhex = null;
+        var to_challenge_txid = null;
+        var to_challenge_vout = null;
+        var to_challenge_amt = null;
     </script>
     <script>
         var sha256 = s => {
@@ -1194,7 +1199,7 @@
         }
 
         var generateFundingAddress = pubkey => {
-            var funding_scripts = [];
+            funding_scripts = [];
 
             var first_leaf = [
                 "OP_10",
@@ -1230,7 +1235,6 @@
             return funding_address;
         }
         var logInputs = async () => {
-            console.log( "logging inputs" );
             //var input_prep = ``;
             var j; for ( j=0; j<initial_commitment_hashes.length; j++ ) {
                 var index = j;
@@ -1303,6 +1307,7 @@
     <script>
         var privkey = getRand( 32 );
         var pubkey = nobleSecp256k1.getPublicKey( privkey, true ).substring( 2 );
+        window.vickys_key = pubkey;
         $( '.vicky_key' ).innerText = pubkey;
     </script>
     <script>
@@ -1313,34 +1318,6 @@
         $( '.address_verification_done' ).onclick = async () => {
             $( '.address_verification_div' ).classList.add( "hidden" );
             $( '.wait_for_sigs_div' ).classList.remove( "hidden" );
-            // $( '.zero_checker_step_two' ).classList.add( "hidden" );
-            // $( '.zero_checker_step_three' ).classList.add( "hidden" );
-            // $( '.zero_checker_step_four' ).classList.remove( "hidden" );
-            // $( '.funding_address_in_step_four' ).innerText = starter_address;
-            // await waitSomeSeconds( 3 );
-            // var txid = prompt( `What was the txid?` );
-            // var vout = prompt( `And the vout?` );
-            // vout = Number( vout );
-            // var amt = 10_000;
-            // var txdata = tapscript.Tx.create({
-            //   vin  : [{
-            //     txid: txid,
-            //     vout: vout,
-            //     prevout: {
-            //       value: amt,
-            //       scriptPubKey: [ 'OP_1', pubkey ]
-            //     },
-            //   }],
-            //   vout : [{
-            //     value: amt - 500,
-            //     scriptPubKey: tapscript.Address.toScriptPubKey( funding_address ),
-            //   }]
-            // });
-
-            // var sig = tapscript.Signer.taproot.sign( privkey, txdata, 0 );
-            // txdata.vin[0].witness = [ sig ];
-            // await tapscript.Signer.taproot.verify(txdata, 0, { throws: true });
-            // console.log( 'txhex:', tapscript.Tx.encode(txdata).hex)
         }
     </script>
     <script>
@@ -1354,7 +1331,49 @@
             readFileContent( file ).then( async content => {
                 var json = JSON.parse( content );
                 if ( "msg_type" in json && json[ "msg_type" ] == "results" ) {
-                    preimages_from_paul = json[ "preimages_to_reveal" ];
+                    var starter_txid = json[ "starter_info" ][ "starter_txid" ];
+                    var starter_vout = json[ "starter_info" ][ "starter_vout" ];
+                    var starter_amt = json[ "starter_info" ][ "starter_amt" ];
+                    var funding_to_challenge_txdata = tapscript.Tx.create({
+                      vin: [{
+                        txid: starter_txid,
+                        vout: starter_vout,
+                        prevout: {
+                          value: starter_amt,
+                          scriptPubKey: tapscript.Address.toScriptPubKey( funding_address )
+                        },
+                      }],
+                      vout: [{
+                        value: starter_amt - 500,
+                        scriptPubKey: tapscript.Address.toScriptPubKey( challenge_address ),
+                      }],
+                    });
+                    var tree = funding_scripts.map( s => tapscript.Tap.encodeScript( s ) );
+                    var selected_script = funding_scripts[ 1 ];
+                    var target = tapscript.Tap.encodeScript( selected_script );
+                    var pubkey = "ab".repeat( 32 );
+                    var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
+                    var his_sig = json[ "signatures" ][ "funding_to_challenge_sig" ];
+                    var sighash = tapscript.Signer.taproot.hash( funding_to_challenge_txdata, 0, {extension: target} );
+                    var his_key = pauls_key;
+                    var his_funding_to_challenge_sig_is_good = await nobleSecp256k1.schnorr.verify( his_sig, sighash, his_key );
+                    console.log( "his funding to challenge sig is good, right?", his_funding_to_challenge_sig_is_good );
+                    if ( !his_funding_to_challenge_sig_is_good ) {
+                        alert( `Paul sent you a bad sig so you must not pay him for any work he does. Aborting and restarting the page.` );
+                        window.location.reload();
+                        return;
+                    }
+                    //todo: validate Paul's other signatures
+                    var funding_to_challenge_sig = tapscript.Signer.taproot.sign( privkey, funding_to_challenge_txdata, 0, { extension: target } );
+                    var sigs = [his_sig, funding_to_challenge_sig];
+                    sigs.reverse();
+                    funding_to_challenge_txdata.vin[0].witness = [ ...sigs, selected_script, cblock ];
+                    to_challenge_txhex = tapscript.Tx.encode( funding_to_challenge_txdata ).hex;  
+                    to_challenge_txid = tapscript.Tx.util.getTxid( to_challenge_txhex );
+                    to_challenge_vout = 0;
+                    to_challenge_amt = starter_amt - 500;
+                    console.log( "broadcast this to challenge Paul:", to_challenge_txhex );
+                    json[ "preimages_to_reveal" ].forEach( item => preimages_from_paul.push( item ) );
                     preimages_from_paul = removeDuplicates( preimages_from_paul );
                     discardUnusedPreimages();
                     if ( preimages_from_paul.length < number_of_preimages_to_expect ) return alert( "oh no! Go put your counterparty’s money in the bit commitment address!" );
@@ -1377,7 +1396,6 @@
                         });
                     });
                     var operation_index; for ( operation_index=0; operation_index<expanded_array.length; operation_index++ ) {
-                        console.log( operation_index );
                         var item = expanded_array[ operation_index ];
                         if ( item[ 0 ] == "OP_NOT" && item.length == 3 ) {
                             var hash_order = [];
@@ -1437,20 +1455,108 @@
                         var item = expanded_array[ index ];
                         if ( item[ 0 ] == "OP_NOT" && item.length == 3 ) {
                             var i_can_spend = await OP_NOT( item[ 1 ], challenge_scripts[ index ][ 2 ], Number( challenge_scripts[ index ][ 4 ].substring( challenge_scripts[ index ][ 4 ].length - 1 ) ), item[ 2 ], challenge_scripts[ index ][ 8 ], Number( challenge_scripts[ index ][ 10 ].substring( challenge_scripts[ index ][ 10 ].length - 1 ) ) );
-                            if ( i_can_spend.startsWith( "you can spend" ) ) {alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_NOT tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );}
+                            if ( i_can_spend.startsWith( "you can spend" ) ) {
+                                var tree = challenge_scripts.map( s => tapscript.Tap.encodeScript( s ) );
+                                var selected_script = challenge_scripts[ index ];
+                                var target = tapscript.Tap.encodeScript( selected_script );
+                                var pubkey = "ab".repeat( 32 );
+                                var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
+                                var split_string = i_can_spend.split( " " );
+                                //the order they should go in is: output first, so it can be moved to the altstack;
+                                //then the input, so it can be processed.
+                                var preimages = [ split_string[ 6 ], split_string[ 12 ] ];
+                                console.log( "preimages:", preimages );
+                                var txdata = tapscript.Tx.create({
+                                  vin  : [{
+                                    txid: to_challenge_txid,
+                                    vout: to_challenge_vout,
+                                    prevout: {
+                                      value: to_challenge_amt,
+                                      scriptPubKey: [ 'OP_1', tpubkey ]
+                                    },
+                                  }],
+                                  vout : [{
+                                    value: to_challenge_amt - 500,
+                                    scriptPubKey: tapscript.Address.toScriptPubKey( 'bcrt1q6zpf4gefu4ckuud3pjch563nm7x27u4ruahz3y' ),
+                                  }]
+                                });
+                                var sig = tapscript.Signer.taproot.sign( privkey, txdata, 0, { extension: target } );
+                                txdata.vin[ 0 ].witness = [ sig, ...preimages, challenge_scripts[ index ], cblock ];
+                                var txhex = tapscript.Tx.encode( txdata ).hex;
+                                alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_NOT tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
+                                // alert( `Paul broke his promise so you can take his money. Broadcast this txid:\n\n${txhex}` );
+                            }
                         }
                         if ( item[ 0 ] == "OP_BOOLAND" && item.length == 4 ) {
                             var i_can_spend = await OP_BOOLAND( item[ 1 ], challenge_scripts[ index ][ 2 ], Number( challenge_scripts[ index ][ 4 ].substring( challenge_scripts[ index ][ 4 ].length - 1 ) ), item[ 2 ], challenge_scripts[ index ][ 7 ], Number( challenge_scripts[ index ][ 9 ].substring( challenge_scripts[ index ][ 9 ].length - 1 ) ), item[ 3 ], challenge_scripts[ index ][ 13 ], Number( challenge_scripts[ index ][ 15 ].substring( challenge_scripts[ index ][ 15 ].length - 1 ) ) );
-                            if ( i_can_spend.startsWith( "you can spend" ) ) {alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_BOOLAND tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );}
+                            if ( i_can_spend.startsWith( "you can spend" ) ) {
+                                var tree = challenge_scripts.map( s => tapscript.Tap.encodeScript( s ) );
+                                var selected_script = challenge_scripts[ index ];
+                                var target = tapscript.Tap.encodeScript( selected_script );
+                                var pubkey = "ab".repeat( 32 );
+                                var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
+                                var split_string = i_can_spend.split( " " );
+                                //the order they should go in is: output first, so it can be moved to the altstack;
+                                //then input 1, as it is processed first; then input 2, as it is processed next.
+                                var preimages = [ split_string[ 12 ], split_string[ 6 ], split_string[ 17 ] ];
+                                var txdata = tapscript.Tx.create({
+                                  vin  : [{
+                                    txid: to_challenge_txid,
+                                    vout: to_challenge_vout,
+                                    prevout: {
+                                      value: to_challenge_amt,
+                                      scriptPubKey: [ 'OP_1', tpubkey ]
+                                    },
+                                  }],
+                                  vout : [{
+                                    value: to_challenge_amt - 500,
+                                    scriptPubKey: tapscript.Address.toScriptPubKey( 'bcrt1q6zpf4gefu4ckuud3pjch563nm7x27u4ruahz3y' ),
+                                  }]
+                                });
+                                var sig = tapscript.Signer.taproot.sign( privkey, txdata, 0, { extension: target } );
+                                txdata.vin[ 0 ].witness = [ sig, ...preimages, challenge_scripts[ index ], cblock ];
+                                var txhex = tapscript.Tx.encode( txdata ).hex;
+                                alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_BOOLAND tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
+                                // alert( `Paul broke his promise so you can take his money. Broadcast this txid:\n\n${txhex}` );
+                            }
                         }
                         if ( item[ 0 ] == "OP_XOR" && item.length == 4 ) {
                             var i_can_spend = await OP_XOR( item[ 1 ], challenge_scripts[ index ][ 2 ], Number( challenge_scripts[ index ][ 4 ].substring( challenge_scripts[ index ][ 4 ].length - 1 ) ), item[ 2 ], challenge_scripts[ index ][ 7 ], Number( challenge_scripts[ index ][ 9 ].substring( challenge_scripts[ index ][ 9 ].length - 1 ) ), item[ 3 ], challenge_scripts[ index ][ 13 ], Number( challenge_scripts[ index ][ 15 ].substring( challenge_scripts[ index ][ 15 ].length - 1 ) ) );
-                            if ( i_can_spend.startsWith( "you can spend" ) ) {alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_XOR tapleaf, but I cannot spend with it, meaning its calculations were done correctly` );}
+                            if ( i_can_spend.startsWith( "you can spend" ) ) {
+                                var tree = challenge_scripts.map( s => tapscript.Tap.encodeScript( s ) );
+                                var selected_script = challenge_scripts[ index ];
+                                var target = tapscript.Tap.encodeScript( selected_script );
+                                var pubkey = "ab".repeat( 32 );
+                                var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
+                                var split_string = i_can_spend.split( " " );
+                                //the order they should go in is: output first, so it can be moved to the altstack;
+                                //then input 1, as it is processed first; then input 2, as it is processed next.
+                                var preimages = [ split_string[ 12 ], split_string[ 6 ], split_string[ 17 ] ];
+                                console.log( "preimages:", preimages );
+                                var txdata = tapscript.Tx.create({
+                                  vin  : [{
+                                    txid: to_challenge_txid,
+                                    vout: to_challenge_vout,
+                                    prevout: {
+                                      value: to_challenge_amt,
+                                      scriptPubKey: [ 'OP_1', tpubkey ]
+                                    },
+                                  }],
+                                  vout : [{
+                                    value: to_challenge_amt - 500,
+                                    scriptPubKey: tapscript.Address.toScriptPubKey( 'bcrt1q6zpf4gefu4ckuud3pjch563nm7x27u4ruahz3y' ),
+                                  }]
+                                });
+                                var sig = tapscript.Signer.taproot.sign( privkey, txdata, 0, { extension: target } );
+                                txdata.vin[ 0 ].witness = [ sig, ...preimages, challenge_scripts[ index ], cblock ];
+                                var txhex = tapscript.Tx.encode( txdata ).hex;
+                                alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_XOR tapleaf, but I cannot spend with it, meaning its calculations were done correctly` );
+                                // alert( `Paul broke his promise so you can take his money. Broadcast this txid:\n\n${txhex}` );
+                            }
                         }
                     }
                     await logInputs();
                     var index; for ( index=0; index<arr.length; index++ ) {
-                        console.log( "running circuit" );
                         var gate = arr[ index ].split( " " ).filter( item => item );
                         if ( gate[ gate.length - 1 ] == "INV" ) {
                             wires[ gate[ 3 ] ] = eval( `INV( wires[ ${gate[ 2 ]} ] )` );
@@ -1471,9 +1577,15 @@
                 pauls_key = json[ "pauls_key" ];
                 initial_commitment_hashes = json[ "initial_commitment_hashes" ];
                 subsequent_commitment_hashes = json[ "subsequent_commitment_hashes" ];
-                var bit_commitment_address = generateBitCommitmentAddress( pubkey );
-                var anti_contradiction_address = generateAntiContradictionAddress( pubkey );
-                var funding_address = generateFundingAddress( pubkey );
+                //todo: Vicky needs to take json[ "output_preimages" ] and add it to
+                //preimages_from_paul, but only if she sees that it actually corresponds
+                //to one of the hashes in the last wire -- or, for other circuits, to
+                //the last n wires, n being the number of outputs to expect
+                json[ "output_preimages" ].forEach( item => preimages_from_paul.push( item ) );
+                var pubkey = window.vickys_key;
+                bit_commitment_address = generateBitCommitmentAddress( pubkey );
+                anti_contradiction_address = generateAntiContradictionAddress( pubkey );
+                funding_address = generateFundingAddress( pubkey );
                 arrprep = `
                 127 191
                 1 64 
@@ -1618,7 +1730,7 @@
                     if ( operation[ 0 ] == "XOR" ) copy_of_subsequent_commitment_hashes.push( [ operation[ 6 ][ 1 ], operation[ 6 ][ 2 ] ] );
                 });
                 await setOperationsArray();
-                var challenge_address = generateChallengeAddress( pubkey );
+                challenge_address = generateChallengeAddress( pubkey );
                 var html = `
                     <p>Funding address: ${funding_address}</p>
                     <p>Bit commitment address: ${bit_commitment_address}</p>
@@ -1654,7 +1766,6 @@
                     return ( ( 'draggable' in div ) || ( 'ondragstart' in div && 'ondrop' in div ) ) && 'FormData' in window && 'FileReader' in window;
                 }();
 
-
             // applying the effect for every form
             var forms = document.querySelectorAll( '.box' );
             Array.prototype.forEach.call( forms, function( form )
@@ -1689,7 +1800,6 @@
 
                     triggerFormSubmit();
 
-                    
                 });
 
                 // drag&drop files if the feature is available
@@ -1733,7 +1843,6 @@
                         triggerFormSubmit();
                     });
                 }
-
 
                 // if the form was submitted
                 form.addEventListener( 'submit', function( e )
@@ -1780,7 +1889,6 @@
                         });
                     }
                 });
-
 
                 // restart the form if has a state of error/success
                 Array.prototype.forEach.call( restart, function( entry )
