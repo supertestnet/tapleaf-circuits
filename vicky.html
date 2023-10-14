@@ -227,6 +227,7 @@
         var number_of_inputs_2 = null;
         var number_of_outputs = null;
         var wire_settings = {}
+        var wire_hashes = [];
         var operations_array = [];
         var initial_commitment_preimages = [];
         var initial_commitment_hashes = [];
@@ -468,10 +469,11 @@
                         var input_preimage_1 = wire_settings[ gate[ 2 ] ][ 1 ];
                     }
                     var output_preimage_0 = copy_of_wire_settings[ gate[ 3 ] ][ 0 ];
-                    var output_preimage_1 = copy_of_wire_settings[ gate[ 3 ] ][ 1 ];;
+                    var output_preimage_1 = copy_of_wire_settings[ gate[ 3 ] ][ 1 ];
                     if ( gate[ 2 ] < 64 ) {
                         var input_hash_0 = initial_commitment_hashes[ gate[ 2 ] ][ 0 ];
                         var input_hash_1 = initial_commitment_hashes[ gate[ 2 ] ][ 1 ];
+                        wire_hashes[ gate[ 2 ] ] = [input_hash_0, input_hash_1];
                     } else {
                         var input_hash_0 = subsequent_commitment_hashes[ gate[ 2 ] - 64 ][ 0 ];
                         var input_hash_1 = subsequent_commitment_hashes[ gate[ 2 ] - 64 ][ 1 ];
@@ -485,6 +487,7 @@
                     var real_output_hash_0 = subsequent_commitment_hashes[ index_of_output_hashes ][ 0 ];
                     var real_output_hash_1 = subsequent_commitment_hashes[ index_of_output_hashes ][ 1 ];
                     wire_settings[ gate[ 3 ] ] = [output_preimage_0, output_preimage_1];
+                    wire_hashes[ gate[ 3 ] ] = [real_output_hash_0, real_output_hash_1];
                     operations_array.push( ["INV", ["input_preimages", input_preimage_0, input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["input_hashes", input_hash_0, input_hash_1], ["output_hashes", real_output_hash_0, real_output_hash_1], `var w_${gate[ 3 ]} = INV( wires[ ${gate[ 2 ]} ] )`] );
                 }
                 if ( gate[ gate.length - 1 ] == "AND" ) {
@@ -511,17 +514,24 @@
                     var index_of_first_input_hashes = findHashesInCopy( copy_of_first_input_hash_0, copy_of_first_input_hash_1 );
                     var first_input_hash_0 = subsequent_commitment_hashes[ index_of_first_input_hashes ][ 0 ];
                     var first_input_hash_1 = subsequent_commitment_hashes[ index_of_first_input_hashes ][ 1 ];
+                    if ( !wire_settings[ gate[ 2 ] ] ) {
+                        wire_hashes[ gate[ 2 ] ] = [first_input_hash_0, first_input_hash_1];
+                    }
                     var copy_of_second_input_hash_0 = await sha256( hexToBytes( copy_of_wire_settings[ gate[ 3 ] ][ 0 ] ) );
                     var copy_of_second_input_hash_1 = await sha256( hexToBytes( copy_of_wire_settings[ gate[ 3 ] ][ 1 ] ) );
                     var index_of_second_input_hashes = findHashesInCopy( copy_of_second_input_hash_0, copy_of_second_input_hash_1 );
                     var second_input_hash_0 = subsequent_commitment_hashes[ index_of_second_input_hashes ][ 0 ];
                     var second_input_hash_1 = subsequent_commitment_hashes[ index_of_second_input_hashes ][ 1 ];
+                    if ( !wire_settings[ gate[ 3 ] ] ) {
+                        wire_hashes[ gate[ 3 ] ] = [second_input_hash_0, second_input_hash_1];
+                    }
                     var copy_of_output_hash_0 = await sha256( hexToBytes( output_preimage_0 ) );
                     var copy_of_output_hash_1 = await sha256( hexToBytes( output_preimage_1 ) );
                     var index_of_output_hashes = findHashesInCopy( copy_of_output_hash_0, copy_of_output_hash_1 );
                     var real_output_hash_0 = subsequent_commitment_hashes[ index_of_output_hashes ][ 0 ];
                     var real_output_hash_1 = subsequent_commitment_hashes[ index_of_output_hashes ][ 1 ];
                     wire_settings[ gate[ 4 ] ] = [output_preimage_0, output_preimage_1];
+                    wire_hashes[ gate[ 4 ] ] = [real_output_hash_0, real_output_hash_1];
                     operations_array.push( ["AND", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", real_output_hash_0, real_output_hash_1], `var w_${gate[ 4 ]} = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )`] );
                 }
                 if ( gate[ gate.length - 1 ] == "XOR" ) {
@@ -548,17 +558,24 @@
                     var index_of_first_input_hashes = findHashesInCopy( copy_of_first_input_hash_0, copy_of_first_input_hash_1 );
                     var first_input_hash_0 = subsequent_commitment_hashes[ index_of_first_input_hashes ][ 0 ];
                     var first_input_hash_1 = subsequent_commitment_hashes[ index_of_first_input_hashes ][ 1 ];
+                    if ( !wire_settings[ gate[ 2 ] ] ) {
+                        wire_hashes[ gate[ 2 ] ] = [first_input_hash_0, first_input_hash_1];
+                    }
                     var copy_of_second_input_hash_0 = await sha256( hexToBytes( copy_of_wire_settings[ gate[ 3 ] ][ 0 ] ) );
                     var copy_of_second_input_hash_1 = await sha256( hexToBytes( copy_of_wire_settings[ gate[ 3 ] ][ 1 ] ) );
                     var index_of_second_input_hashes = findHashesInCopy( copy_of_second_input_hash_0, copy_of_second_input_hash_1 );
                     var second_input_hash_0 = subsequent_commitment_hashes[ index_of_second_input_hashes ][ 0 ];
                     var second_input_hash_1 = subsequent_commitment_hashes[ index_of_second_input_hashes ][ 1 ];
+                    if ( !wire_settings[ gate[ 3 ] ] ) {
+                        wire_hashes[ gate[ 3 ] ] = [second_input_hash_0, second_input_hash_1];
+                    }
                     var copy_of_output_hash_0 = await sha256( hexToBytes( output_preimage_0 ) );
                     var copy_of_output_hash_1 = await sha256( hexToBytes( output_preimage_1 ) );
                     var index_of_output_hashes = findHashesInCopy( copy_of_output_hash_0, copy_of_output_hash_1 );
                     var real_output_hash_0 = subsequent_commitment_hashes[ index_of_output_hashes ][ 0 ];
                     var real_output_hash_1 = subsequent_commitment_hashes[ index_of_output_hashes ][ 1 ];
                     wire_settings[ gate[ 4 ] ] = [output_preimage_0, output_preimage_1];
+                    wire_hashes[ gate[ 4 ] ] = [real_output_hash_0, real_output_hash_1];
                     operations_array.push( ["XOR", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", real_output_hash_0, real_output_hash_1], `var w_${gate[ 4 ]} = XOR( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )`] );
                 }
             }
@@ -649,7 +666,7 @@
             var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
             bit_commitment_tpubkey = tpubkey;
             bit_commitment_cblock = cblock;
-            var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtest" );
+            var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
             return bit_commitment_address;
         }
 
@@ -701,7 +718,7 @@
             var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
             anti_contradiction_tpubkey = tpubkey;
             anti_contradiction_cblock = cblock;
-            var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtest" );
+            var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
             return anti_contradiction_address;
         }
 
@@ -1212,7 +1229,7 @@
             var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
             challenge_tpubkey = tpubkey;
             challenge_cblock = cblock;
-            var challenge_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtest" );
+            var challenge_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
             return challenge_address;
         }
 
@@ -1249,7 +1266,7 @@
             var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
             funding_tpubkey = tpubkey;
             funding_cblock = cblock;
-            var funding_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtest" );
+            var funding_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
             return funding_address;
         }
         var logInputs = async () => {
@@ -1393,7 +1410,10 @@
                     json[ "preimages_to_reveal" ].forEach( item => preimages_from_paul.push( item ) );
                     preimages_from_paul = removeDuplicates( preimages_from_paul );
                     discardUnusedPreimages();
+                    //todo: actually give Vicky a transaction to broadcast here
                     if ( preimages_from_paul.length < number_of_preimages_to_expect ) return alert( "oh no! Go put your counterparty’s money in the bit commitment address!" );
+                    //todo: also give Vicky transactions to broadcast if Paul doesn't do his bit commitments in time
+                    //todo: also make the circuits reusable so that Vicky and Paul don't force close ine very transaction
                     var preimages_and_their_tapleaves = [];
                     var i; for ( i=0; i<preimages_from_paul.length; i++ ) {
                         var preimage = preimages_from_paul[ i ];
@@ -1482,7 +1502,7 @@
                                 //the order they should go in is: output first, so it can be moved to the altstack;
                                 //then the input, so it can be processed.
                                 var preimages = [ split_string[ 6 ], split_string[ 12 ] ];
-                                console.log( "preimages:", preimages );
+                                var destino = prompt( `Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go` );
                                 var txdata = tapscript.Tx.create({
                                   vin  : [{
                                     txid: to_challenge_txid,
@@ -1494,7 +1514,7 @@
                                   }],
                                   vout : [{
                                     value: to_challenge_amt - 500,
-                                    scriptPubKey: tapscript.Address.toScriptPubKey( 'bcrt1q6zpf4gefu4ckuud3pjch563nm7x27u4ruahz3y' ),
+                                    scriptPubKey: tapscript.Address.toScriptPubKey( destino ),
                                   }]
                                 });
                                 var sig = tapscript.Signer.taproot.sign( privkey, txdata, 0, { extension: target } );
@@ -1503,7 +1523,7 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_NOT tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
                                 if ( paul_lied ) continue;
                                 paul_lied = true;
-                                alert( `Paul broke his promise so you can take his money. Broadcast these txs:\n\n${to_challenge_txhex}\n\n${txhex}` );
+                                alert( `Broadcast these 2 transactions:\n\n${to_challenge_txhex}\n\n${txhex}` );
                             }
                         }
                         if ( item[ 0 ] == "OP_BOOLAND" && item.length == 4 ) {
@@ -1518,6 +1538,7 @@
                                 //the order they should go in is: output first, so it can be moved to the altstack;
                                 //then input 1, as it is processed first; then input 2, as it is processed next.
                                 var preimages = [ split_string[ 12 ], split_string[ 6 ], split_string[ 17 ] ];
+                                var destino = prompt( `Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go` );
                                 var txdata = tapscript.Tx.create({
                                   vin  : [{
                                     txid: to_challenge_txid,
@@ -1529,7 +1550,7 @@
                                   }],
                                   vout : [{
                                     value: to_challenge_amt - 500,
-                                    scriptPubKey: tapscript.Address.toScriptPubKey( 'bcrt1q6zpf4gefu4ckuud3pjch563nm7x27u4ruahz3y' ),
+                                    scriptPubKey: tapscript.Address.toScriptPubKey( destino ),
                                   }]
                                 });
                                 var sig = tapscript.Signer.taproot.sign( privkey, txdata, 0, { extension: target } );
@@ -1538,7 +1559,7 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_BOOLAND tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
                                 if ( paul_lied ) continue;
                                 paul_lied = true;
-                                alert( `Paul broke his promise so you can take his money. Broadcast these txs:\n\n${to_challenge_txhex}\n\n${txhex}` );
+                                alert( `Broadcast these 2 transactions:\n\n${to_challenge_txhex}\n\n${txhex}` );
                             }
                         }
                         if ( item[ 0 ] == "OP_XOR" && item.length == 4 ) {
@@ -1553,7 +1574,7 @@
                                 //the order they should go in is: output first, so it can be moved to the altstack;
                                 //then input 1, as it is processed first; then input 2, as it is processed next.
                                 var preimages = [ split_string[ 12 ], split_string[ 6 ], split_string[ 17 ] ];
-                                console.log( "preimages:", preimages );
+                                var destino = prompt( `Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go` );
                                 var txdata = tapscript.Tx.create({
                                   vin  : [{
                                     txid: to_challenge_txid,
@@ -1565,7 +1586,7 @@
                                   }],
                                   vout : [{
                                     value: to_challenge_amt - 500,
-                                    scriptPubKey: tapscript.Address.toScriptPubKey( 'bcrt1q6zpf4gefu4ckuud3pjch563nm7x27u4ruahz3y' ),
+                                    scriptPubKey: tapscript.Address.toScriptPubKey( destino ),
                                   }]
                                 });
                                 var sig = tapscript.Signer.taproot.sign( privkey, txdata, 0, { extension: target } );
@@ -1574,7 +1595,7 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_XOR tapleaf, but I cannot spend with it, meaning its calculations were done correctly` );
                                 if ( paul_lied ) continue;
                                 paul_lied = true;
-                                alert( `Paul broke his promise so you can take his money. Broadcast these txs:\n\n${to_challenge_txhex}\n\n${txhex}` );
+                                alert( `Broadcast these 2 transactions:\n\n${to_challenge_txhex}\n\n${txhex}` );
                             }
                         }
                     }
@@ -1630,10 +1651,6 @@
                 subsequent_commitment_hashes = json[ "subsequent_commitment_hashes" ];
                 program = json[ "program" ];
                 pauls_promise = json[ "promise" ];
-                //todo: Vicky needs to take json[ "output_preimages" ] and add it to
-                //preimages_from_paul, but only if she sees that it actually corresponds
-                //to the hashes in the last n wires, n being the number of outputs she expects
-                json[ "output_preimages" ].forEach( item => preimages_from_paul.push( item ) );
                 var pubkey = window.vickys_key;
                 bit_commitment_address = generateBitCommitmentAddress( pubkey );
                 anti_contradiction_address = generateAntiContradictionAddress( pubkey );
@@ -1782,6 +1799,35 @@
                     if ( operation[ 0 ] == "XOR" ) copy_of_subsequent_commitment_hashes.push( [ operation[ 6 ][ 1 ], operation[ 6 ][ 2 ] ] );
                 });
                 await setOperationsArray();
+                //Vicky needs to take json[ "output_preimages" ] and add it to
+                //preimages_from_paul, but only if she sees that it actually corresponds
+                //to the hashes in the last n wires, n being the number of output wires
+                //she expects
+                var questionable_preimages = json[ "output_preimages" ];
+                questionable_preimages = removeDuplicates( questionable_preimages );
+                var questionable_hashes = [];
+                var i; for ( i=0; i<questionable_preimages.length; i++ ) {
+                    var hash = await sha256( hexToBytes( questionable_preimages[ i ] ) );
+                    questionable_hashes.push( hash );
+                }
+                var preimages_found = 0;
+                var i; for ( i=number_of_preimages_to_expect-number_of_outputs; i<number_of_preimages_to_expect; i++ ) {
+                    wire_hashes[ i ].every( expected_hash => {
+                        var j; for ( j=0; j<questionable_hashes.length; j++ ) {
+                            if ( expected_hash == questionable_hashes[ j ] ) {
+                                preimages_found = preimages_found + 1;
+                                return;
+                            }
+                        }
+                        return true;
+                    });
+                }
+                if ( preimages_found != number_of_outputs ) {
+                    alert( `The prover sent you bad info. Aborting. Number of preimages you expected: ${number_of_outputs} Number of preimages you got: ${preimages_found}` );
+                    window.location.reload();
+                    return;
+                }
+                questionable_preimages.forEach( item => preimages_from_paul.push( item ) );
                 challenge_address = generateChallengeAddress( pubkey );
                 var html = `
                     <p>Funding address: ${funding_address}</p>
