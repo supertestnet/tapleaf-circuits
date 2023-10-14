@@ -328,7 +328,7 @@
                 bit_commitment_cblock = cblock;
                 var [ tpubkey, alt_cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, commitment_to_anywhere_else_tapleaf });
                 commitment_to_anywhere_else_cblock = alt_cblock;
-                var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtest" );
+                var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
                 return bit_commitment_address;
             }
 
@@ -381,7 +381,7 @@
                 var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
                 anti_contradiction_tpubkey = tpubkey;
                 anti_contradiction_cblock = cblock;
-                var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtest" );
+                var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
                 return anti_contradiction_address;
             }
 
@@ -893,7 +893,7 @@
                 var [ tpubkey, cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, target });
                 challenge_tpubkey = tpubkey;
                 challenge_cblock = cblock;
-                var challenge_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtest" );
+                var challenge_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
                 return challenge_address;
             }
 
@@ -935,7 +935,7 @@
                 funding_to_paul_cblock = cblock;
                 var [ tpubkey, alt_cblock ] = tapscript.Tap.getPubKey(pubkey, { tree, funding_to_anywhere_else_tapleaf });
                 funding_to_anywhere_else_cblock = alt_cblock;
-                var funding_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtest" );
+                var funding_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "testnet" );
                 return funding_address;
             }
 
@@ -985,7 +985,7 @@
             var challenge_script = null;
             var privkey = getRand( 32 );
             var pubkey = nobleSecp256k1.getPublicKey( privkey, true ).substring( 2 );
-            var starter_address = tapscript.Address.p2tr.encode( pubkey, "regtest" );
+            var starter_address = tapscript.Address.p2tr.encode( pubkey, "testnet" );
             var vickys_key = null;
             var starter_txid = null;
             var starter_vout = null;
@@ -1339,6 +1339,7 @@
                 starter_txid = tapscript.Tx.util.getTxid( starter_txhex );
                 starter_vout = 0;
                 starter_amt = 9_500;
+                var destino = prompt( `Please enter a bitcoin address where you want your earnings to go` );
                 var earnings_txdata = tapscript.Tx.create({
                   vin: [{
                     txid: starter_txid,
@@ -1351,8 +1352,7 @@
                   }],
                   vout: [{
                     value: starter_amt - 500,
-                    //todo: stop sending Paul's money to the mutiny address and let Paul say where he wants his money to go
-                    scriptPubKey: tapscript.Address.toScriptPubKey( "tb1qd28npep0s8frcm3y7dxqajkcy2m40eysplyr9v" ),
+                    scriptPubKey: tapscript.Address.toScriptPubKey( destino ),
                   }],
                 });
                 var earnings_sig = tapscript.Signer.taproot.sign( privkey, earnings_txdata, 0, { extension: funding_to_paul_tapleaf } );
@@ -1364,6 +1364,11 @@
                 //address (3) a tx from the bit commitment address to the challenge address
                 //(4) a tx from the funding address to the anti-contradiction address (5)
                 //a tx from the funding address to the challenge address
+                //todo: Paul shouldn't put his money in the funding address til he has
+                //validated sigs from Vicky letting him move his money *out of* the bit
+                //commitment addresses and into the challenge address. Otherwise Vicky
+                //might put his money *in* the bit commitment address but never let him
+                //take it out.
                 var funding_to_bit_commitment_txdata = tapscript.Tx.create({
                   vin: [{
                     txid: starter_txid,
@@ -1453,8 +1458,8 @@
                 //puts his money in the funding address -- but she shouldn't do that til
                 //she has the ability to move his money from the funding address to all of
                 //these other addresses, so she should validate his signatures before doing
-                //that swap. She should also independently construct all these txs so she
-                //has an independent copy of the sighashes to compare each sig against
+                //that swap. She should also independently construct all the txs above so
+                //she has an independent copy of the sighashes to compare each sig against
                 $( '.starter_txhex' ).innerText = starter_txhex;
                 presigned_tx_sigs = {
                     funding_to_bit_commitment_sig: funding_to_bit_commitment_sig.hex,
