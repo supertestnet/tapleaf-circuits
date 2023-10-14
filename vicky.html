@@ -200,6 +200,9 @@
         .hidden {
             display: none;
         }
+        .wait_for_sigs_div {
+            word-wrap: break-word;
+        }
     </style>
     <script>
         var $ = document.querySelector.bind( document );
@@ -1523,7 +1526,7 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_NOT tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
                                 if ( paul_lied ) continue;
                                 paul_lied = true;
-                                alert( `Broadcast these 2 transactions:\n\n${to_challenge_txhex}\n\n${txhex}` );
+                                $( '.wait_for_sigs_div' ).innerHTML = `<p>Broadcast these 2 transactions:</p><p>${to_challenge_txhex}</p><p>${txhex}</p>`;
                             }
                         }
                         if ( item[ 0 ] == "OP_BOOLAND" && item.length == 4 ) {
@@ -1559,7 +1562,7 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_BOOLAND tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
                                 if ( paul_lied ) continue;
                                 paul_lied = true;
-                                alert( `Broadcast these 2 transactions:\n\n${to_challenge_txhex}\n\n${txhex}` );
+                                $( '.wait_for_sigs_div' ).innerHTML = `<p>Broadcast these 2 transactions:</p><p>${to_challenge_txhex}</p><p>${txhex}</p>`;
                             }
                         }
                         if ( item[ 0 ] == "OP_XOR" && item.length == 4 ) {
@@ -1595,7 +1598,7 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_XOR tapleaf, but I cannot spend with it, meaning its calculations were done correctly` );
                                 if ( paul_lied ) continue;
                                 paul_lied = true;
-                                alert( `Broadcast these 2 transactions:\n\n${to_challenge_txhex}\n\n${txhex}` );
+                                $( '.wait_for_sigs_div' ).innerHTML = `<p>Broadcast these 2 transactions:</p><p>${to_challenge_txhex}</p><p>${txhex}</p>`;
                             }
                         }
                     }
@@ -1633,15 +1636,15 @@
                     if ( program == "zero checker" ) {
                         var is_or_is_not = "is";
                         if ( !Number( output ) ) is_or_is_not = "is not";
-                        alert( `The prover kept his promise. He promised ${pauls_promise.toLowerCase()}. This is what he sent you:\n\n${input_1}\n\nBitvm checked whether that string consists of all zeros and this was its result: ${!!Number( output )} -- so it determined the string ${is_or_is_not} all zeros. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too.` );
+                        alert( `The prover kept his promise. He promised ${pauls_promise.toLowerCase()}. This is what he sent you:\n\n${input_1}\n\nBitvm checked whether that string consists of all zeros and this was its result: ${!!Number( output )} -- so it determined the string ${is_or_is_not} all zeros. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too. This completes the procedure; refresh your page to try again.` );
                     }
                     if ( program == "size checker" ) {
-                        alert( `The prover kept his promise. He promised two give you two numbers, the first of which is ${pauls_promise.toLowerCase()} the second number. These are the two numbers he sent you:\n\n${parseInt( input_1, 2 )} and ${parseInt( input_2, 2 )}\n\nBitvm checked whether the first is ${pauls_promise.toLowerCase()} the second and this was its result: ${!!Number( output )} -- so it determined the first is ${pauls_promise.toLowerCase()} the second. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too.` );
+                        alert( `The prover kept his promise. He promised two give you two numbers, the first of which is ${pauls_promise.toLowerCase()} the second number. These are the two numbers he sent you:\n\n${parseInt( input_1, 2 )} and ${parseInt( input_2, 2 )}\n\nBitvm checked whether the first is ${pauls_promise.toLowerCase()} the second and this was its result: ${!!Number( output )} -- so it determined the first is ${pauls_promise.toLowerCase()} the second. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too. This completes the procedure; refresh your page to try again.` );
                     }
                     if ( program == "addition" ) {
                         var do_or_dont = "";
                         if ( parseInt( input_1, 2 ) + parseInt( input_2, 2 ) == parseInt( output, 2 ) ) do_or_dont = "don't";
-                        alert( `The prover kept his promise. He promised to give you two numbers that ${do_or_dont} add up to ${parseInt( output, 2 )}. The first number he gave you is ${parseInt( input_1, 2 )} and the second is ${parseInt( input_2, 2 )}.\n\nBitvm checked whether they add up to ${parseInt( output, 2 )} and it determined the equation is: ${parseInt( input_1, 2 ) + parseInt( input_2, 2 ) == parseInt( output, 2 )} -- just as the prover promised. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too.` );
+                        alert( `The prover kept his promise. He promised to give you two numbers that ${do_or_dont} add up to ${parseInt( output, 2 )}. The first number he gave you is ${parseInt( input_1, 2 )} and the second is ${parseInt( input_2, 2 )}.\n\nBitvm checked whether they add up to ${parseInt( output, 2 )} and it determined the equation is: ${parseInt( input_1, 2 ) + parseInt( input_2, 2 ) == parseInt( output, 2 )} -- just as the prover promised. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too. This completes the procedure; refresh your page to try again.` );
                     }
                     return;
                 }
