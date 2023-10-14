@@ -1011,7 +1011,7 @@
                 <li>Otherwise, act as the verifier to take the money by producing the error</li>
             </ol>
             <h2>Pick a program you want to run</h2>
-            <p><button class="view_zero_checker">Zero checker</button> <button class="view_size_checker">Size checker</button> <button class="view_addition">Addition</button></p>
+            <p><button class="view_zero_checker">Zero checker</button> <button class="view_size_checker" disabled>Size checker (coming soon)</button> <button class="view_addition" disabled>Addition (coming soon)</button></p>
             <div class="zero_checker hidden">
                 <h3 class="zero_checker_label">
                     Zero checker
@@ -1266,6 +1266,7 @@
                 vickys_key = $( '.vickys_key' ).value;
             }
             $( '.submit_all_or_none' ).onclick = () => {
+                promise = $( '.all_or_none' ).value;
                 if ( promise == "All 0s" ) {
                     output_preimages = [ subsequent_commitment_preimages[ subsequent_commitment_preimages.length - 1 ][ 1 ] ];
                 } else {
@@ -1285,7 +1286,6 @@
                 $( '.zero_checker_step_one' ).classList.add( "hidden" );
                 $( '.zero_checker_step_two' ).classList.add( "hidden" );
                 $( '.zero_checker_step_three' ).classList.remove( "hidden" );
-                promise = $( '.all_or_none' ).value;
                 $( '.step_six_promise_to_vicky' ).innerText = promise;
                 bit_commitment_address = generateBitCommitmentAddress( pubkey );
                 anti_contradiction_address = generateAntiContradictionAddress( pubkey );
@@ -1309,6 +1309,7 @@
                 $( '.zero_checker_step_three' ).classList.add( "hidden" );
                 $( '.zero_checker_step_four' ).classList.remove( "hidden" );
                 $( '.funding_address_in_step_four' ).innerText = starter_address;
+                console.log( "starter address:", starter_address );
                 await waitSomeSeconds( 3 );
                 var txid = prompt( `What was the txid?` );
                 var vout = prompt( `And the vout?` );
@@ -1478,7 +1479,8 @@
                 var i; for ( i=0; i<operations_array.length; i++ ) {
                     var fn_to_run = operations_array[ i ][ operations_array[ i ].length - 1 ].split( "= " )[ 1 ];
                     var preimage_to_reveal = eval( fn_to_run );
-                    wires.push( preimage_to_reveal );
+                    var output_wire = Number( operations_array[ i ][ operations_array[ i ].length - 1 ].split( " " )[ 1 ].substring( 2 ) );
+                    wires[ output_wire ] = preimage_to_reveal;
                     preimage_to_reveal = Number( preimage_to_reveal ) + 1;
                     if ( operations_array[ i ][ 0 ] == "INV" ) preimages_to_reveal.push( operations_array[ i ][ 2 ][ preimage_to_reveal ] );
                     if ( operations_array[ i ][ 0 ] == "AND" ) preimages_to_reveal.push( operations_array[ i ][ 3 ][ preimage_to_reveal ] );
