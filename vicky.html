@@ -1612,7 +1612,15 @@
                     if ( program == "zero checker" ) {
                         var is_or_is_not = "is";
                         if ( !Number( output ) ) is_or_is_not = "is not";
-                        alert( `The prover kept his promise. He promised ${pauls_promise.toLowerCase()}. This is what he sent you:\n\n${input_1}\n\nBitvm checked whether that string consists of all zeros, and this was its result: ${!!Number( output )} -- so it knows the string ${is_or_is_not} all zeros. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too.` );
+                        alert( `The prover kept his promise. He promised ${pauls_promise.toLowerCase()}. This is what he sent you:\n\n${input_1}\n\nBitvm checked whether that string consists of all zeros and this was its result: ${!!Number( output )} -- so it determined the string ${is_or_is_not} all zeros. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too.` );
+                    }
+                    if ( program == "size checker" ) {
+                        alert( `The prover kept his promise. He promised two give you two numbers, the first of which is ${pauls_promise.toLowerCase()} the second number. These are the two numbers he sent you:\n\n${parseInt( input_1, 2 )} and ${parseInt( input_2, 2 )}\n\nBitvm checked whether the first is ${pauls_promise.toLowerCase()} the second and this was its result: ${!!Number( output )} -- so it determined the first is ${pauls_promise.toLowerCase()} the second. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too.` );
+                    }
+                    if ( program == "addition" ) {
+                        var do_or_dont = "";
+                        if ( parseInt( input_1, 2 ) + parseInt( input_2, 2 ) == parseInt( output, 2 ) ) do_or_dont = "don't";
+                        alert( `The prover kept his promise. He promised to give you two numbers that ${do_or_dont} add up to ${parseInt( output, 2 )}. The first number he gave you is ${parseInt( input_1, 2 )} and the second is ${parseInt( input_2, 2 )}.\n\nBitvm checked whether they add up to ${parseInt( output, 2 )} and it determined the equation is: ${parseInt( input_1, 2 ) + parseInt( input_2, 2 ) == parseInt( output, 2 )} -- just as the prover promised. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too.` );
                     }
                     return;
                 }
@@ -1624,8 +1632,7 @@
                 pauls_promise = json[ "promise" ];
                 //todo: Vicky needs to take json[ "output_preimages" ] and add it to
                 //preimages_from_paul, but only if she sees that it actually corresponds
-                //to one of the hashes in the last wire -- or, for other circuits, to
-                //the last n wires, n being the number of outputs to expect
+                //to the hashes in the last n wires, n being the number of outputs she expects
                 json[ "output_preimages" ].forEach( item => preimages_from_paul.push( item ) );
                 var pubkey = window.vickys_key;
                 bit_commitment_address = generateBitCommitmentAddress( pubkey );
