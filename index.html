@@ -1114,6 +1114,16 @@
             </ol>
             <h2>Pick a program you want to run</h2>
             <p><button class="view_zero_checker p_buttons">Zero checker</button> <button class="view_size_checker p_buttons" disabled>Size checker (coming soon)</button> <button class="view_addition p_buttons" disabled>Addition (coming soon)</button></p>
+            <h2>Caveats</h2>
+            <ol>
+                <li>This is a toy implementation, don't expect much.</li>
+                <li>I wrote the VM in about 200 lines of javascript which means it barely works.</li>
+                <li>It breaks if you put a program with more than about 3000 logic gates in it. <a href="https://github.com/supertestnet/tapleaf-circuits/" target="_blank">Help me write a better one!</a></li>
+                <li>The whitepaper talks about using "binary search" in a challenge to find the shortest path to prove your counterparty is equivocating. I don't know how to program a binary search so I just didn't. Instead, if you challenge the prover, he has to *prove the entire computation himself, all on chain.* Which is very dumb, and expensive. But I wasn't trying to make it the smart way, I was trying to make it the easy way. Help  me improve it!</li>
+                <li>If Paul doesn't send Vicky the data he promised, she is technically able to take his money after a 10 block timelock, but I didn't automatically give her a transaction for this like I did for Paul. So she's just out of luck til I do that. (Or you can figure out how to write bitcoin transactions manually and do it yourself.)</li>
+                <li>Paul doesn't make Vicky pay him, or even check if her signatures on the presigned transactions are correct. He just yolos his money right into the bitvm address with no checks or balances, so Vicky can easily steal from him by just immediately moving it into the challenge address without presigning the transaction that lets him take it out again. Fixing that is on my todo list. So is having Vicky pay Paul for the computation.</li>
+                <li>There are a bunch of other caveats but whatever, it technically works! I'm really looking forward to testing more functions with this. Bitcoin can run *anything* guys! Let's write some functions for it!</li>
+            </ol>
             <div class="zero_checker hidden">
                 <h3 class="zero_checker_label">
                     Zero checker
