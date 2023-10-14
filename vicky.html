@@ -213,7 +213,18 @@
         var arrprep = ``;
         var arr = [];
         var number_of_preimages_to_expect = null;
+        //the following line refers to the "first" number on line 2 of a bristol circuit file
+        //e.g. if the second line is 2 64 32 then the following line would be 2 and it means
+        //how many numbers are being passed to the function as input
+        var number_of_numbers_being_passed_as_input = null;
+        //the following line refers to the "second" number on line 2 of a bristol circuit file
+        //e.g. if the second line is 2 64 32 then the following line would be 64 and it means
+        //how many bits are in the first number passed to the function as input
         var number_of_inputs = null;
+        //the following line refers to the "third" number on line 2 of a bristol circuit file
+        //e.g. if the second line is 2 64 32 then the following line would be 32 and it means
+        //how many bits are in the second number passed to the function as input
+        var number_of_inputs_2 = null;
         var number_of_outputs = null;
         var wire_settings = {}
         var operations_array = [];
@@ -248,6 +259,9 @@
         var to_challenge_txid = null;
         var to_challenge_vout = null;
         var to_challenge_amt = null;
+        var program = null;
+        var pauls_promise = null;
+        var paul_lied = false;
     </script>
     <script>
         var sha256 = s => {
@@ -350,8 +364,12 @@
             if ( arr[ 3 ] ) alert( "Oops, you entered an invalid bristol circuit! Try again with the whole document, including the first three lines that define the number of gates, number of input bits, and number of output bits." );
             number_of_preimages_to_expect = arr[ 0 ].split( " " ).filter( item => item )[ 1 ];
             number_of_preimages_to_expect = Number( number_of_preimages_to_expect );
+            number_of_numbers_being_passed_as_input = arr[ 1 ].split( " " ).filter( item => item )[ 0 ];
+            number_of_numbers_being_passed_as_input = Number( number_of_numbers_being_passed_as_input );
             number_of_inputs = arr[ 1 ].split( " " ).filter( item => item )[ 1 ];
             number_of_inputs = Number( number_of_inputs );
+            if ( arr[ 1 ].split( " " ).filter( item => item )[ 2 ] ) number_of_inputs_2 = arr[ 1 ].split( " " ).filter( item => item )[ 2 ];
+            if ( number_of_inputs_2 ) number_of_inputs_2 = Number( number_of_inputs_2 );
             number_of_outputs = arr[ 2 ].split( " " ).filter( item => item )[ 1 ];
             number_of_outputs = Number( number_of_outputs );
             arr.splice( 0, 4 );
@@ -1244,12 +1262,12 @@
                     var preimage = preimages_from_paul[ i ];
                     var hash = await sha256( hexToBytes( preimage ) );
                     if ( hash == input[ 0 ] ) {
-                        wires[ i ] = 0;
+                        wires[ index ] = 0;
                         //input_prep += `0 because the preimage to ${input[ 0 ]} was revealed (its preimage is ${preimage})\n\n`;
                         break;
                     }
                     if ( hash == input[ 1 ] ) {
-                        wires[ i ] = 1;
+                        wires[ index ] = 1;
                         //input_prep += `1 because the preimage to ${input[ 1 ]} was revealed (its preimage is ${preimage})\n\n`;
                         break;
                     }
@@ -1372,7 +1390,6 @@
                     to_challenge_txid = tapscript.Tx.util.getTxid( to_challenge_txhex );
                     to_challenge_vout = 0;
                     to_challenge_amt = starter_amt - 500;
-                    console.log( "broadcast this to challenge Paul:", to_challenge_txhex );
                     json[ "preimages_to_reveal" ].forEach( item => preimages_from_paul.push( item ) );
                     preimages_from_paul = removeDuplicates( preimages_from_paul );
                     discardUnusedPreimages();
@@ -1483,8 +1500,10 @@
                                 var sig = tapscript.Signer.taproot.sign( privkey, txdata, 0, { extension: target } );
                                 txdata.vin[ 0 ].witness = [ sig, ...preimages, challenge_scripts[ index ], cblock ];
                                 var txhex = tapscript.Tx.encode( txdata ).hex;
-                                alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_NOT tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
-                                // alert( `Paul broke his promise so you can take his money. Broadcast this txid:\n\n${txhex}` );
+                                // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_NOT tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
+                                if ( paul_lied ) continue;
+                                paul_lied = true;
+                                alert( `Paul broke his promise so you can take his money. Broadcast these txs:\n\n${to_challenge_txhex}\n\n${txhex}` );
                             }
                         }
                         if ( item[ 0 ] == "OP_BOOLAND" && item.length == 4 ) {
@@ -1516,8 +1535,10 @@
                                 var sig = tapscript.Signer.taproot.sign( privkey, txdata, 0, { extension: target } );
                                 txdata.vin[ 0 ].witness = [ sig, ...preimages, challenge_scripts[ index ], cblock ];
                                 var txhex = tapscript.Tx.encode( txdata ).hex;
-                                alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_BOOLAND tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
-                                // alert( `Paul broke his promise so you can take his money. Broadcast this txid:\n\n${txhex}` );
+                                // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_BOOLAND tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
+                                if ( paul_lied ) continue;
+                                paul_lied = true;
+                                alert( `Paul broke his promise so you can take his money. Broadcast these txs:\n\n${to_challenge_txhex}\n\n${txhex}` );
                             }
                         }
                         if ( item[ 0 ] == "OP_XOR" && item.length == 4 ) {
@@ -1550,8 +1571,10 @@
                                 var sig = tapscript.Signer.taproot.sign( privkey, txdata, 0, { extension: target } );
                                 txdata.vin[ 0 ].witness = [ sig, ...preimages, challenge_scripts[ index ], cblock ];
                                 var txhex = tapscript.Tx.encode( txdata ).hex;
-                                alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_XOR tapleaf, but I cannot spend with it, meaning its calculations were done correctly` );
-                                // alert( `Paul broke his promise so you can take his money. Broadcast this txid:\n\n${txhex}` );
+                                // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_XOR tapleaf, but I cannot spend with it, meaning its calculations were done correctly` );
+                                if ( paul_lied ) continue;
+                                paul_lied = true;
+                                alert( `Paul broke his promise so you can take his money. Broadcast these txs:\n\n${to_challenge_txhex}\n\n${txhex}` );
                             }
                         }
                     }
@@ -1571,12 +1594,34 @@
                             //js_version += `wires[ ${gate[ 4 ]} ] = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )\n`;
                         }
                     }
+                    var input_1 = ``;
+                    var input_2 = ``;
+                    var output = ``;
+                    var i; for ( i=0; i<number_of_inputs; i++ ) {
+                        input_1 += String( wires[ i ] );
+                    }
+                    if ( number_of_inputs_2 ) {
+                        var i; for ( i=0; i<number_of_inputs_2; i++ ) {
+                            input_2 += String( wires[ i ] );
+                        }
+                    }
+                    var i; for ( i=number_of_preimages_to_expect-number_of_outputs; i<number_of_preimages_to_expect; i++ ) {
+                        output += String( wires[ i ] );
+                    }
+                    if ( paul_lied ) return;
+                    if ( program == "zero checker" ) {
+                        var is_or_is_not = "is";
+                        if ( !Number( output ) ) is_or_is_not = "is not";
+                        alert( `The prover kept his promise. He promised ${pauls_promise.toLowerCase()}. This is what he sent you:\n\n${input_1}\n\nBitvm checked whether that string consists of all zeros, and this was its result: ${!!Number( output )} -- so it knows the string ${is_or_is_not} all zeros. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too.` );
+                    }
                     return;
                 }
                 console.log( json );
                 pauls_key = json[ "pauls_key" ];
                 initial_commitment_hashes = json[ "initial_commitment_hashes" ];
                 subsequent_commitment_hashes = json[ "subsequent_commitment_hashes" ];
+                program = json[ "program" ];
+                pauls_promise = json[ "promise" ];
                 //todo: Vicky needs to take json[ "output_preimages" ] and add it to
                 //preimages_from_paul, but only if she sees that it actually corresponds
                 //to one of the hashes in the last wire -- or, for other circuits, to
