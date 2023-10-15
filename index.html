@@ -1191,7 +1191,11 @@
             </div>
             <div class="addition_step_three hidden">
                 <p>
-                    Time to validate that you and Vicky generated the same bitcoin addresses. Do all of these match what Vicky got? (Note: don't send any money to them yet)
+                    Enter the bitcoin address where you want your money to go when you get it back:
+                </p>
+                <p><input class="addition_bitcoin_address"></p>
+                <p>
+                    Also, it's time to validate that you and Vicky generated the same bitcoin addresses. Do all of these match what Vicky got? (Note: don't send any money to them yet)
                 </p>
                 <div class="address_validation">loading...</div>
                 <p><button class="addition_step_three_done">Yes, they match</button> <button class="addition_step_three_reset">No, they don't match</button></p>
@@ -1252,14 +1256,18 @@
             </div>
             <div class="zero_checker_step_three hidden">
                 <p>
-                    Time to validate that you and Vicky generated the same bitcoin addresses. Do all of these match what Vicky got? (Note: don't send any money to them yet)
+                    Enter the bitcoin address where you want your money to go when you get it back:
+                </p>
+                <p><input class="zero_checker_bitcoin_address"></p>
+                <p>
+                    Also, it's time to validate that you and Vicky generated the same bitcoin addresses. Do all of these match what Vicky got? (Note: don't send any money to them yet)
                 </p>
                 <div class="address_validation">loading...</div>
                 <p><button class="zero_checker_step_three_done">Yes, they match</button> <button class="zero_checker_step_three_reset">No, they don't match</button></p>
             </div>
             <div class="zero_checker_step_four hidden">
                 <p>
-                    Send *PRECISELY* 10,000 sats to the following address to start the contract (if you send the wrong amount it will not work):
+                    Also, send *PRECISELY* 10,000 sats to the following address to start the contract (if you send the wrong amount it will not work):
                 </p>
                 <div class="funding_address_in_step_four">loading...</div>
                 <p class="asking_for_txid">Asking for txid and vout in 3 seconds</p>
@@ -1538,7 +1546,8 @@
                 starter_txid = tapscript.Tx.util.getTxid( starter_txhex );
                 starter_vout = 0;
                 starter_amt = 9_500;
-                var destino = prompt( `Please enter a bitcoin address where you want your earnings to go` );
+                var destino = $( '.zero_checker_bitcoin_address' ).value;
+                if ( !destino ) destino = prompt( `Please enter a bitcoin address where you want your earnings to go` );
                 var earnings_txdata = tapscript.Tx.create({
                   vin: [{
                     txid: starter_txid,
@@ -1994,7 +2003,8 @@
                 starter_txid = tapscript.Tx.util.getTxid( starter_txhex );
                 starter_vout = 0;
                 starter_amt = 9_500;
-                var destino = prompt( `Please enter a bitcoin address where you want your earnings to go` );
+                var destino = $( '.addition_bitcoin_address' ).value;
+                if ( !destino ) destino = prompt( `Please enter a bitcoin address where you want your earnings to go` );
                 var earnings_txdata = tapscript.Tx.create({
                   vin: [{
                     txid: starter_txid,
