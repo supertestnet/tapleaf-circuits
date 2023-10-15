@@ -1342,6 +1342,10 @@
     </div>
     <div class="wait_for_sigs_div hidden">
         <p>
+            Enter the bitcoin address where you want Paul's money to go if he breaks his promise:
+        </p>
+        <p><input class="vickys_bitcoin_address"></p>
+        <p>
             Paul will shortly send you a "results" file. Upload it here when he does.
         </p>
         <form method="post" class="box">
@@ -1521,7 +1525,8 @@
                                 //the order they should go in is: output first, so it can be moved to the altstack;
                                 //then the input, so it can be processed.
                                 var preimages = [ split_string[ 6 ], split_string[ 12 ] ];
-                                var destino = prompt( `Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go` );
+                                var destino = $( '.vickys_bitcoin_address' ).value;
+                                if ( !destino ) destino = prompt( `Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go` );
                                 var txdata = tapscript.Tx.create({
                                   vin  : [{
                                     txid: to_challenge_txid,
@@ -1542,7 +1547,7 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_NOT tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
                                 pushBTCpmt( to_challenge_txhex, "" );
                                 setTimeout( () => {pushBTCpmt( txhex, "" )}, 3000 );
-                                $( '.wait_for_sigs_div' ).innerHTML = `<p>You're all set! Your transactions have been broadcasted and, at any moment, your money should show up in the address you designated.</p>`;
+                                $( '.wait_for_sigs_div' ).innerHTML = `<h1>You're in luck!</h1><p>Whoa, Paul broke his promise! That means you got to take his money. Cool! BTW your transaction doing so has already been broadcasted. At any moment, your money should show up in the address you designated.</p>`;
                             }
                         }
                         if ( item[ 0 ] == "OP_BOOLAND" && item.length == 4 ) {
@@ -1559,7 +1564,8 @@
                                 //the order they should go in is: output first, so it can be moved to the altstack;
                                 //then input 1, as it is processed first; then input 2, as it is processed next.
                                 var preimages = [ split_string[ 12 ], split_string[ 6 ], split_string[ 17 ] ];
-                                var destino = prompt( `Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go` );
+                                var destino = $( '.vickys_bitcoin_address' ).value;
+                                if ( !destino ) destino = prompt( `Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go` );
                                 var txdata = tapscript.Tx.create({
                                   vin  : [{
                                     txid: to_challenge_txid,
@@ -1580,7 +1586,7 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_BOOLAND tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
                                 pushBTCpmt( to_challenge_txhex, "" );
                                 setTimeout( () => {pushBTCpmt( txhex, "" )}, 3000 );
-                                $( '.wait_for_sigs_div' ).innerHTML = `<p>You're all set! Your transactions have been broadcasted and your money should show up in the address you designated at any moment.</p>`;
+                                $( '.wait_for_sigs_div' ).innerHTML = `<h1>You're in luck!</h1><p>Whoa, Paul broke his promise! That means you got to take his money. Cool! BTW your transaction doing so has already been broadcasted. At any moment, your money should show up in the address you designated.</p>`;
                             }
                         }
                         if ( item[ 0 ] == "OP_XOR" && item.length == 4 ) {
@@ -1597,7 +1603,8 @@
                                 //the order they should go in is: output first, so it can be moved to the altstack;
                                 //then input 1, as it is processed first; then input 2, as it is processed next.
                                 var preimages = [ split_string[ 12 ], split_string[ 6 ], split_string[ 17 ] ];
-                                var destino = prompt( `Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go` );
+                                var destino = $( '.vickys_bitcoin_address' ).value;
+                                if ( !destino ) destino = prompt( `Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go` );
                                 var txdata = tapscript.Tx.create({
                                   vin  : [{
                                     txid: to_challenge_txid,
@@ -1618,7 +1625,7 @@
                                 // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_XOR tapleaf, but I cannot spend with it, meaning its calculations were done correctly` );
                                 pushBTCpmt( to_challenge_txhex, "" );
                                 setTimeout( () => {pushBTCpmt( txhex, "" )}, 3000 );
-                                $( '.wait_for_sigs_div' ).innerHTML = `<p>You're all set! Your transactions have been broadcasted and your money should show up in the address you designated at any moment.</p>`;
+                                $( '.wait_for_sigs_div' ).innerHTML = `<h1>You're in luck!</h1><p>Whoa, Paul broke his promise! That means you got to take his money. Cool! BTW your transaction doing so has already been broadcasted. At any moment, your money should show up in the address you designated.</p>`;
                             }
                         }
                     }
