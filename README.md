@@ -11,7 +11,7 @@ The following is what the zero-checking circuit looks like in [bristol format](h
 
 Note that bristol format is not very human readable. It's a blueprint for manufacturing microchips. The first line defines how many "gates" and "wires" are needed in the circuit (in this case there are 127 gates and 191 wires), the second defines how many "input" wires will contribute input bits to the function (in this case, there is 1 input to the function and it consists of 64 bits), and how many "output" wires will come out of the circuit (in this case, 1 wire will inform us whether all 64 input bits were 0s or not). 
 
-The rest of the lines define the operating instructions for each of the wires and gates. It operates via the format [# input wires] [# output wires] [input wire(s)] [output wire(s)] [gate]. So the first operating instruction takes in wire 63, flips the bit, and outputs the result to wire 65. The thrid operating instruction takes in wires 64 and 65, computes 64 AND 65, and ouputs the result to wire 69. 
+The rest of the lines define the operating instructions for each of the wires and gates. It operates via the format `# input wires` `# output wires` `input wire(s)` `output wire(s)` `gate`. So the first operating instruction takes in wire 63, flips the bit, and outputs the result to wire 65. The thrid operating instruction takes in wires 64 and 65, computes 64 AND 65, and ouputs the result to wire 69. 
 
 ```
 127 191
@@ -250,7 +250,7 @@ document.getElementsByTagName('head')[0].appendChild(tapscript);
 
 # Import the circuit
 
-Copy the circuit into a javascript string.
+To begin, copy the circuit into a javascript string.
 
 ```javascript
 var arrprep = `
@@ -407,7 +407,7 @@ number_of_inputs = Number( number_of_inputs );
 var number_of_outputs = arr[ 2 ].split( " " ).filter( item => item )[ 1 ];
 number_of_outputs = Number( number_of_outputs );
 
-// Remove the first four special specification lines from the array so the array now starts at the first operating instruction
+// Remove the first four special specification lines from the array so the array now starts at the first logic gate
 arr.splice( 0, 4 );
 ```
 
@@ -418,6 +418,7 @@ For each gate in the array, map two arrays to it: an array of input hashes and a
 
 /* wire_settings is an object that stores data in the following format: 
 {'wire_num': [preimage_0, preimage_1]}
+
 This maps a sepcific wire (e.g. 63) to an array that contains two random 32 byte numbers ("preimages") that represent 0 and 1 for that wire. 
 */
 var wire_settings = {};
@@ -573,11 +574,20 @@ operations_array.forEach( operation => {
 });
 ```
 
-Now Paul must share the commitment hashes with Vicky, namely, initial_commitment_hashes and subsequent_commitment_hashes.
+Now Paul must share the commitment hashes with Vicky, namely, initial_commitment_hashes and subsequent_commitment_hashes. These hashes will then be used to generate the three taproot addresses used in the challenge-response protocol. 
 
 # Generate the bit commitment address
 
-Paul and Vicky should both do this independently, then compare the bitcoin addresses to make sure they are the same.
+The bit commitment address will contain 3 leaves:
+1. *Leaf 1:* Allows Vicky to spend the inputs of the bit commitment address after 10 blocks have passed.
+2. *Leaf 2:* Allows Paul and Vicky to cooperatively sign a 2/2 multisig to spend the inputs at any time.
+3. *Leaf 3:* Contains the actual bit commitment. Requires Paul to provide a valid full program trace in order to spend the inputs. 
+
+This address is where Vicky will send funds if she believes Paul is misbehaving, because it forces him to provide a full trace of a valid program in order to spend the inputs. If he cannot, then Vicky can spend inputs after 10 blocks. This will be one of the three addresses used in the challenge-response proving system discussed later. 
+
+One thing to note is that the creation of this (and the following two) addresses only relies on knowing the *hashes of the preimages* not the preimages themselves. 
+
+Paul and Vicky should both do this independently, then compare the bitcoin addresses to make sure they are the same. 
 
 ```javascript
 // Below we construct the bitcommit address. This is where Vicky should send funds if Paul is misbehaving. It forces him to provide a full trace of a valid program. Otherwise Vicky can spend the funds after 10 blocks. 
@@ -661,16 +671,21 @@ var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtes
 
 # Generate the anti-contradiction address
 
-Paul and Vicky should both do this independently, then compare the bitcoin addresses to make sure they are the same.
+The anti-contradiction address allows Vicky to spend the inputs if she can reveal two valid preimages for a given gate. 
+
+It contain 2 types of leaves:
+1. *Leaf Type 1:* This type of leaf contains an anti-contradiction script. It requires Vicky to reveal a valid preimage pair (preimage_0, preimage_1) for a gate in order to spend the inputs of the address.
+2. *Leaf Type 2:* This leaf allows Paul to spend the inputs of the address after 10 blocks. 
+
+Paul and Vicky should both generate this address independently, then compare the addresses to make sure they are the same.
 
 ```javascript
-//todo: replace the last OP_1 with these two lines:
-//<Vicky’s key>
-//OP_CHECKSIG
-
 /* The anti_contradiction_template script fragement accepts two inputs <preimage_1> <preimage_2>.
 It evaluates to TRUE if BOTH preimages hash to their respective hash commitments.  
 */
+//todo: replace the last OP_1 with these two lines:
+//<Vicky’s key>
+//OP_CHECKSIG
 var anti_contradiction_template = `
     OP_SHA256
     INSERT_16_BYTE_HERE
@@ -720,6 +735,8 @@ var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "re
 ```
 
 # Generate the challenge address
+
+
 
 ```javascript
 var templates = {}
@@ -1251,29 +1268,32 @@ At this point, Paul should reveal his 64 input bits. Previously, he shared an ar
 var preimages_to_reveal = [];
 var wires = [];
 
-/* Loop through the committed preimages and push:
-a. 0 to the wires array, and 
-b. the 32-byte preimage associated with 0 to the preimages_to_reveal array
-for every wire in the circuit
+/* 
+Loop through the committed preimages and for every wire in the circuit push:
+  a. 0 to the wires array, and 
+  b. the 32-byte preimage associated with 0 to the preimages_to_reveal array
 */
+
 initial_commitment_preimages.forEach( ( preimage_pair, index ) => {
     wires.push( 0 );
     preimages_to_reveal.push( preimage_pair[ 0 ] );
 });
 
 
-/* Loop through the gates, run the eval, and get the result and next preimage
+/* 
+Loop through the gates, run the eval, and get the result and next preimage
 
 Recall that the operations array for INV looked like this:
 operations_array.push( 
-["INV", 
-["input_preimages", input_preimage_0, input_preimage_1], 
-["output_preimages", output_preimage_0, output_preimage_1], 
-["input_hashes", input_hash_0, input_hash_1], 
-["output_hashes", output_hash_0, output_hash_1], 
-`var w_${gate[ 3 ]} = INV( wires[ ${gate[ 2 ]} ] )`
+    ["INV", 
+    ["input_preimages", input_preimage_0, input_preimage_1], 
+    ["output_preimages", output_preimage_0, output_preimage_1], 
+    ["input_hashes", input_hash_0, input_hash_1], 
+    ["output_hashes", output_hash_0, output_hash_1], 
+    `var w_${gate[ 3 ]} = INV( wires[ ${gate[ 2 ]} ] )`
 ] );
 */
+
 var i; for ( i=0; i<operations_array.length; i++ ) {
     // Get the function to eval that we stored in the operations array (e.g. INV( w_63) from 'var w_65 = INV( w_63 )')
     var fn_to_run = operations_array[ i ][ operations_array[ i ].length - 1 ].split( "= " )[ 1 ];
