@@ -581,13 +581,15 @@ Now Paul must share the commitment hashes with Vicky, namely, initial_commitment
 The bit commitment address will contain 3 leaves:
 1. *Leaf 1:* Allows Vicky to spend the inputs of the bit commitment address after 10 blocks have passed.
 2. *Leaf 2:* Allows Paul and Vicky to cooperatively sign a 2/2 multisig to spend the inputs at any time.
-3. *Leaf 3:* Contains the actual bit commitment. Requires Paul to provide a valid full program trace in order to spend the inputs. 
+3. *Leaf 3:* Contains the actual bit commitment. Allows Paul to spend the inputs if he provides a Requires Paul to provide a valid full program trace in order to spend the inputs. 
 
 This address is where Vicky will send funds if she believes Paul is misbehaving, because it forces him to provide a full trace of a valid program in order to spend the inputs. If he cannot, then Vicky can spend inputs after 10 blocks. This will be one of the three addresses used in the challenge-response proving system discussed later. 
 
 One thing to note is that the creation of this (and the following two) addresses only relies on knowing the *hashes of the preimages* not the preimages themselves. 
 
 Paul and Vicky should both do this independently, then compare the bitcoin addresses to make sure they are the same. 
+
+[NOTE: As of now, this implementation does not support bisection.]
 
 ```javascript
 // Below we construct the bitcommit address. This is where Vicky should send funds if Paul is misbehaving. It forces him to provide a full trace of a valid program. Otherwise Vicky can spend the funds after 10 blocks. 
@@ -673,8 +675,8 @@ var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtes
 
 The anti-contradiction address allows Vicky to spend the inputs if she can reveal two valid preimages for a given gate. 
 
-It contain 2 types of leaves:
-1. *Leaf Type 1:* This type of leaf contains an anti-contradiction script. It requires Vicky to reveal a valid preimage pair (preimage_0, preimage_1) for a gate in order to spend the inputs of the address.
+It contain two types of leaves:
+1. *Leaf Type 1:* This type of leaf contains an anti-contradiction script. It requires Vicky to reveal a valid preimage pair `<preimage_0> <preimage_1>` for a wire in order to spend the inputs of the address. There will be one of these leafs for each wire in the circuit. 
 2. *Leaf Type 2:* This leaf allows Paul to spend the inputs of the address after 10 blocks. 
 
 Paul and Vicky should both generate this address independently, then compare the addresses to make sure they are the same.
@@ -736,6 +738,14 @@ var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "re
 
 # Generate the challenge address
 
+The challenge address allows Vicky to spend the inputs if a gate was evaluated incorrectly given Paul's input(s) and output. Otherwise Paul can spend the inputs after 10 blocks. 
+
+In the construction below, there are 3 types of leaves:
+1. *Leaf Type 1 - Incorrect Execution:* This type of leaf is spendable if Vicky can provide a valid set of `<ouptut_preimage> <input_preimage(s)>` that evaluates incorrectly. Examples of this type of leaf include OP_NOT_00 and OP_AND_101. 
+2. *Leaf Type 2 - Correct Execution:* This type of leaf will always fail execution, but is included for completeness. It accepts an ouput primage and input preimage that evalutes correctly. Examples of this type of leaf include OP_NOT_01 and OP_AND_111. 
+3. *Leaf Type 3:* This leaf allows Paul to spend the inputs of the address after 10 blocks. 
+
+Paul and Vicky should both generate this address independently, then compare the addresses to make sure they are the same.
 
 
 ```javascript
@@ -743,6 +753,10 @@ var templates = {}
 //todo: replace the last OP_1 in each template with these two lines:
 //<"Vickys_key">
 //OP_CHECKSIG
+
+
+// Below we run through two examples, OP_NOT_00 and OP_NOT_01. 
+// Notice that only INVALID execution paths (e.g. OP_NOT_00) are actually spendable scripts by Vicky. 
 
 /* Example: OP_NOT_00
 
@@ -752,17 +766,18 @@ AND
 b. The <output_preimage> hashes to the hash commitment associated with 0 for this gate
 
 The full logic is below:
-- Push the <output_preimage> to the alt stack
-- Hash the <input_preimage>
-- Check that the hash of the <input_preimage> is equal to the committed hash (fail if not)
-- Push 0 to the stack
-- OP_NOT flips the 0 to 1
-- Push <output_preimage> from alt stack to stack
-- Hash the <output_preimage>
-- Check to see if the hash of the <output_preimage> is equal to the committed hash (fail if not)
-- Push 0 to the stack
-- OP_NUMNOTEQUAL compares the 1 created by OP_NOT to the 0 just pushed - pushes 1 to the stack
-- OP_VERIFY consumes the 1 and pushes OP_1 (should be <Vicky's pubkey><OP_CHECKSIG>) to the stack
+    - Push the <output_preimage> to the alt stack
+    - Hash the <input_preimage>
+    - Check that the hash of the <input_preimage> is equal to the committed hash (fail if not)
+    - Push 0 to the stack
+    - OP_NOT flips the 0 to 1
+    - Push <output_preimage> from alt stack to stack
+    - Hash the <output_preimage>
+    - Check to see if the hash of the <output_preimage> is equal to the committed hash (fail if not)
+    - Push 0 to the stack
+    - OP_NUMNOTEQUAL compares the 1 created by OP_NOT to the 0 just pushed - pushes 1 to the stack
+    - OP_VERIFY consumes the 1 and pushes OP_1 (should be <Vicky's pubkey><OP_CHECKSIG>) to the stack
+Now Vicky will be able to spend the inputs by unlocking this leaf!
 */
 templates[ "OP_NOT_00" ] = `
     OP_TOALTSTACK
@@ -780,6 +795,28 @@ templates[ "OP_NOT_00" ] = `
     OP_VERIFY
     OP_1
 `;
+
+/* Example: OP_NOT_01
+
+This script fragment accepts inputs of the form <ouput_preimage> <input_preimage>. It evaluates to TRUE if:
+a. The <input_preimage> hashes to hash commitment associated with 0 for this gate 
+AND 
+b. The <output_preimage> hashes to the hash commitment associated with 0 for this gate
+
+The full logic is below:
+    - Push the <output_preimage> to the alt stack
+    - Hash the <input_preimage>
+    - Check that the hash of the <input_preimage> is equal to the committed hash (fail if not)
+    - Push 0 to the stack
+    - OP_NOT flips the 0 to 1
+    - Push <output_preimage> from alt stack to stack
+    - Hash the <output_preimage>
+    - Check to see if the hash of the <output_preimage> is equal to the committed hash (fail if not)
+    - Push 1 to the stack
+    - OP_NUMNOTEQUAL compares the 1 created by OP_NOT to the 1 just pushed. 
+    !! THIS WILL ALWAYS FAIL !!
+Since OP_NOT_01 is a proper execution path (0 is flipped to 1), this script path will never be spendable. It is included for completeness. 
+*/
 templates[ "OP_NOT_01" ] = `
     OP_TOALTSTACK
     OP_SHA256
@@ -1194,6 +1231,8 @@ var i; for ( i=0; i<operations_array.length; i++ ) {
             challenge_scripts.push( leaf );
         });
     }
+
+    // Repeat the same process as above but for AND and XOR gates
     if ( operations_array[ i ][ 0 ] == "AND" ) {
         var first_hash_pair = [ operations_array[ i ][ 4 ][ 1 ], operations_array[ i ][ 4 ][ 2 ] ];
         var second_hash_pair = [ operations_array[ i ][ 5 ][ 1 ], operations_array[ i ][ 5 ][ 2 ] ];
@@ -1533,6 +1572,8 @@ TODO: actually create and test the funding address.
 # Execution
 
 Now the protocol is ready: Paul and Vicky fund the funding address, 1000 sats from Vicky to pay Paul for the computation, and 10000 sats from Paul in case he does not perform the computation correctly. Next, Paul reveals his preimages to Vicky. If he does not, she puts his money into the bit commitment address to *force* him to, or she will get 10000 sats from him if he *still* doesn't. Assuming Paul reveals the preimages, Vicky checks that the corresponding bits, when passed as input to the bristol circuit, produce a valid path that results in the expected value. If they do, great! After 10 blocks, Paul can take back his 10000 sats *and* Vicky's 1000 sat payment. But if Paul's input bits do not produce a valid result, Vicky can use either the anti-contradiction address or the challenge address to take Paul's 10000 sats.
+
+TW Note: The anti-contradiction address allows Vicky to take Paul's sats if he evaluated a gate incorrectly? 
 
 # Conclusion
 
