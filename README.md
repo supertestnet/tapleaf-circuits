@@ -9,7 +9,9 @@ The circuit we will evaluate in this example is a zero-checking function: it use
 
 The following is what the zero-checking circuit looks like in [bristol format](https://homes.esat.kuleuven.be/~nsmart/MPC/). A corresponding tapleaf circuit can be explored [here](https://gist.github.com/supertestnet/0d0064fe5d516726e624afd70ee0c687).
 
-Note that bristol format is not very human readable. It's a blueprint for manufacturing microchips. The first line defines how many "wires" are needed in the circuit, the second defines how many "input" wires will contribute input bits to the function (in this case, there is 1 input to the function and it consists of 64 bits), and how many "output" wires will come out of the circuit (in this case, 1 wire will inform us whether all 64 input bits were 0s or not).
+Note that bristol format is not very human readable. It's a blueprint for manufacturing microchips. The first line defines how many "gates" and "wires" are needed in the circuit (in this case there are 127 gates and 191 wires), the second defines how many "input" wires will contribute input bits to the function (in this case, there is 1 input to the function and it consists of 64 bits), and how many "output" wires will come out of the circuit (in this case, 1 wire will inform us whether all 64 input bits were 0s or not). 
+
+The rest of the lines define the operating instructions for each of the wires and gates. It operates via the format `# input wires` `# output wires` `input wire(s)` `output wire(s)` `gate`. So the first operating instruction takes in wire 63, flips the bit, and outputs the result to wire 65. The thrid operating instruction takes in wires 64 and 65, computes 64 AND 65, and ouputs the result to wire 69. 
 
 ```
 127 191
@@ -152,6 +154,8 @@ If the above function outputs a 1 then every input bit was a 0, otherwise at lea
 To convert, run, and validate a bristol circuit in a taproot address we need several dependencies.
 
 ```javascript
+// Helper functions
+
 var sha256 = s => {
     if ( typeof s == "string" ) s = new TextEncoder().encode( s );
     return crypto.subtle.digest( 'SHA-256', s ).then( hashBuffer => {
@@ -248,7 +252,7 @@ document.getElementsByTagName('head')[0].appendChild(tapscript);
 
 # Import the circuit
 
-Copy the circuit into a javascript string.
+To begin, copy the circuit into a javascript string.
 
 ```javascript
 var arrprep = `
@@ -389,28 +393,63 @@ var arrprep = `
 Run this code to convert each line into an array, define some needed variables using the first three lines, and then trim the circuit to just the logic gates.
 
 ```javascript
+//Split the arrprep string into an actual array
 var arr = arrprep.split( `\n`);
 if ( !arr[ 0 ] ) arr.splice( 0, 1 );
 if ( !arr[ arr.length - 1 ] ) arr.splice( arr.length - 1, 1 );
+
+// Check that the third line of arr is empty per Bristol circuit standards
 if ( arr[ 3 ] ) alert( "Oops, you entered an invalid bristol circuit! Try again with the whole document, including the first three lines that define the number of gates, number of input bits, and number of output bits." );
+
+// Get the expected number of wires ("preimages"), inputs, and outputs
 var number_of_preimages_to_expect = arr[ 0 ].split( " " ).filter( item => item )[ 1 ];
 number_of_preimages_to_expect = Number( number_of_preimages_to_expect );
 var number_of_inputs = arr[ 1 ].split( " " ).filter( item => item )[ 1 ];
 number_of_inputs = Number( number_of_inputs );
 var number_of_outputs = arr[ 2 ].split( " " ).filter( item => item )[ 1 ];
 number_of_outputs = Number( number_of_outputs );
+
+// Remove the first four special specification lines from the array so the array now starts at the first logic gate
 arr.splice( 0, 4 );
 ```
 
 For each gate in the array, map two arrays to it: an array of input hashes and an array of output hashes.
 
 ```javascript
-var wire_settings = {}
+// Initialize a wire_settings object and an operations_arrary list. 
+
+/* 
+wire_settings is an object that stores data in the following format: 
+    {'wire_num': [preimage_0, preimage_1]}
+
+This maps a sepcific wire (e.g. 63) to an array that contains two random 32 byte numbers ("preimages") that represent 0 and 1 for that wire. 
+*/
+var wire_settings = {};
+
+/* 
+operations_array is a list of lists. Each sublist consists of: 
+     - operation
+     - input preimages 
+     - output preimages
+     - input preimage hashes 
+     - output preimage hashes
+     - function mapping the input wire vaule to the output wire value
+*/
 var operations_array = [];
+
+// Populate the operations away and wire_settings variables
 setOperationsArray = async () => {
+
+    // Loop through each operation in the array
     var index; for ( index=0; index<arr.length; index++ ) {
+
+        // Create a gate array of format [# input wires, # output wires, input wire(s)...,  output wire(s)..., gate]
         var gate = arr[ index ].split( " " ).filter( item => item );
+
+        // Check if the gate is an inversion gate
         if ( gate[ gate.length - 1 ] == "INV" ) {
+
+            // Check and see if the wire_setting for the input wire already exists. If it doesn't, generate the two input preimages.
             if ( !wire_settings[ gate[ 2 ] ] ) {
                 var input_preimage_0 = getRand( 32 );
                 var input_preimage_1 = getRand( 32 );
@@ -419,15 +458,23 @@ setOperationsArray = async () => {
                 var input_preimage_0 = wire_settings[ gate[ 2 ] ][ 0 ];
                 var input_preimage_1 = wire_settings[ gate[ 2 ] ][ 1 ];
             }
+
+            // Create the output preimages and calculate the input/output preimage hashes
             var output_preimage_0 = getRand( 32 );
             var output_preimage_1 = getRand( 32 );
             var input_hash_0 = await sha256( hexToBytes( input_preimage_0 ) );
             var input_hash_1 = await sha256( hexToBytes( input_preimage_1 ) );
             var output_hash_0 = await sha256( hexToBytes( output_preimage_0 ) );
             var output_hash_1 = await sha256( hexToBytes( output_preimage_1 ) );
+
+            // Set the wire_setting for the output wire to the output wire preimages
             wire_settings[ gate[ 3 ] ] = [output_preimage_0, output_preimage_1];
+
+            // Push to operations_array: the instruction, the input and output preimages and hashes, and a function mapping the input wire to the output wire 
             operations_array.push( ["INV", ["input_preimages", input_preimage_0, input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["input_hashes", input_hash_0, input_hash_1], ["output_hashes", output_hash_0, output_hash_1], `var w_${gate[ 3 ]} = INV( wires[ ${gate[ 2 ]} ] )`] );
         }
+
+        // For the AND gate, follow the same process as INV but with an additional input wire for the operations_array. 
         if ( gate[ gate.length - 1 ] == "AND" ) {
             if ( !wire_settings[ gate[ 2 ] ] ) {
                 var first_input_preimage_0 = getRand( 32 );
@@ -456,6 +503,8 @@ setOperationsArray = async () => {
             wire_settings[ gate[ 4 ] ] = [output_preimage_0, output_preimage_1];
             operations_array.push( ["AND", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", output_hash_0, output_hash_1], `var w_${gate[ 4 ]} = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )`] );
         }
+
+        // For the XOR gate, follow the same process as INV but with an additional input wire for the operations_array. 
         if ( gate[ gate.length - 1 ] == "XOR" ) {
             if ( !wire_settings[ gate[ 2 ] ] ) {
                 var first_input_preimage_0 = getRand( 32 );
@@ -491,7 +540,7 @@ setOperationsArray();
 
 Every logic gate now has a corresponding js line and the info Paul and Vicky need to make corresponding tapleaves. Paul and Vicky should be able to independently go through each entry in the operations_array and create 4 tapleaves for the INVs and 8 tapleaves for the ANDs. Then Paul can commit to revealing the 64 input bits. Paul must also reveal all subsequent output bits, and he can figure out which ones to reveal by running the javascript function.
 
-For example, in the operations array, operation 0 says its javascript function is var w_65 = INV( w_63 ). w_63 should get set when Paul is committing to his input bits, so once that’s done he can just use javascript’s built-in eval() method to run `eval( INV( w_63 ) )` and learn what w_65 should be. (I find it works well if I only pass the part of the js function *after* the equal sign to the eval() method.) If eval() returns a 0, Paul can reveal the first output preimage; if a 1, Paul can reveal the second output preimage. In both cases, Paul needs to push the preimage he is revealing to an array called preimages_to_reveal, which he will share with Vicky. Then repeat til there are no more bits to reveal. This will all be done below in the section "Reveal the input and output bits."
+For example, in the operations array, operation 0 says its javascript function is var w_65 = INV( w_63 ). w_63 should get set when Paul is committing to his input bits, so once that’s done he can just use javascript’s built-in eval() method to run `eval( INV( w_63 ) )` and learn what w_65 should be. (I find it works well if I only pass the part of the js function *after* the equal sign to the eval() method.) If eval() returns a 0, Paul can reveal the first output preimage; if a 1, Paul can reveal the second output preimage. In both cases, Paul needs to push the preimage he is revealing to an array called preimages_to_reveal, which he will share with Vicky. Then repeat til there are no more bits to reveal. This will all be done below in the section "Reveal the input and output bits.
 
 # Generate the bit commitments
 
@@ -500,6 +549,9 @@ Paul will need to create these bit commitments privately.
 ```javascript
 var initial_commitment_preimages = [];
 var initial_commitment_hashes = [];
+
+// This function adds the preimage and hash bit commitments to intial_commitment_preimages and initial_commitment_hashes.
+// Recall that the 64 input bits to our zero-checking function run from bit 0 to bit 63. 
 var generateBitCommitments = async () => {
     var i; for ( i=0; i<64; i++ ) {
         initial_commitment_preimages.push( wire_settings[ String( i ) ] );
@@ -512,6 +564,8 @@ var generateBitCommitments = async () => {
 }
 generateBitCommitments();
 
+// We then loop through the operations_array and add all the intermediate commitments to subsequent_commitment_preimages and subsequent_commitment_hashes.
+// Recall that there are 127 operations in our zero-cheking function. Each one is a row in the operations_array. 
 var subsequent_commitment_preimages = [];
 var subsequent_commitment_hashes = [];
 operations_array.forEach( operation => {
@@ -524,13 +578,29 @@ operations_array.forEach( operation => {
 });
 ```
 
-Now Paul must share the commitment hashes with Vicky, namely, initial_commitment_hashes and subsequent_commitment_hashes.
+Now Paul must share the commitment hashes with Vicky, namely, initial_commitment_hashes and subsequent_commitment_hashes. These hashes will then be used to generate the three taproot addresses used in the challenge-response protocol. 
 
 # Generate the bit commitment address
 
-Paul and Vicky should both do this independently, then compare the bitcoin addresses to make sure they are the same.
+The bit commitment address will contain 3 leaves:
+1. *Leaf 1:* Allows Vicky to spend the inputs of the bit commitment address after 10 blocks have passed.
+2. *Leaf 2:* Allows Paul and Vicky to cooperatively sign a 2/2 multisig to spend the inputs at any time.
+3. *Leaf 3:* Contains the actual bit commitment. Allows Paul to spend the inputs if he provides a valid execution trace. 
+
+(todo: Leaf 3 needs to be updated to only allow Paul (with a presigned signature from Vicky) to send the funds to the challenge address if he provides a full execution trace.)
+
+This address is where Vicky will send funds if she believes Paul is misbehaving. It forces him to provide a full trace of a program in order to spend the inputs. If he cannot, then Vicky can spend inputs after 10 blocks. This will be one of the three addresses used in the challenge-response proving system discussed later. 
+
+One thing to note is that the creation of this (and the following two) addresses only relies on knowing the *hashes of the preimages* not the preimages themselves. 
+
+Paul and Vicky should both do this independently, then compare the bitcoin addresses to make sure they are the same. 
+
+[NOTE: As of now, this implementation does not support bisection.]
 
 ```javascript
+// Below we construct the bitcommit address. This is where Vicky should send funds if Paul is misbehaving. It forces him to provide a full trace of a valid program. Otherwise Vicky can spend the funds after 10 blocks. 
+
+// Leaf 1 of the taptree will allow Vicky to spend the inputs if 10 blocks have passed.
 var leaf1 = [
     "OP_10",
     "OP_CHECKSEQUENCEVERIFY",
@@ -539,6 +609,7 @@ var leaf1 = [
     "OP_CHECKSIG"
 ];
 
+// Leaf 2 of the taptree will allow Paul and Vicky to cooperatively sign a 2/2 multisig to spend the inputs at any time.
 var leaf2 = [
     "OP_0",
     //todo: change "ba".repeat( 32 ) to Paul’s key
@@ -550,6 +621,13 @@ var leaf2 = [
     "OP_2",
     "OP_EQUAL"
 ];
+
+/* Leaf 3 of the taptree is the bit commitment. 
+
+The bit_commitment_template script fragment accepts two inputs <preimage_1> <preimage_2>. If EITHER preimage hashes to the committed preimage_hash, then the fragment is TRUE. This fragment will be repeated for every wire to create the entire bit_commitment_script. Thus, if Paul provided the full trace of a valid program he would be able to spend via this leaf. 
+*/
+
+//todo: Update leaf 3 script such that by providing a valid execution trace, Paul can only send to the challenge address. 
 
 var bit_commitment_template = `
     OP_SHA256
@@ -565,6 +643,7 @@ var bit_commitment_template = `
 
 var bit_commitment_script = ``;
 
+// Loop over each initial commitment hash and subsequent commitment hash to generate a 
 initial_commitment_hashes.forEach( hash_pair => {
     bit_commitment_script += bit_commitment_template.replace( "INSERT_16_BYTE_HERE", hash_pair[ 0 ] ).replace( "INSERT_17_BYTE_HERE", hash_pair[ 1 ] );
 });
@@ -584,12 +663,14 @@ bit_commitment_script += `
     OP_1
 `;
 
+// Convert bit_commitment_script_array from a string to an array and set it equal to leaf3
 var bit_commitment_script_array = bit_commitment_script.replaceAll( "\n\n", "\n" ).replaceAll( " ", "" ).split( "\n" );
 bit_commitment_script_array.splice( 0, 1 );
 bit_commitment_script_array.splice( bit_commitment_script_array.length - 1, 1 );
 
 var leaf3 = bit_commitment_script_array;
 
+// Generate the taproot address from the three leafs
 var scripts = [leaf1, leaf2, leaf3];
 var tree = scripts.map( s => tapscript.Tap.encodeScript( s ) );
 var selected_script = scripts[ 2 ];
@@ -601,9 +682,20 @@ var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtes
 
 # Generate the anti-contradiction address
 
-Paul and Vicky should both do this independently, then compare the bitcoin addresses to make sure they are the same.
+The anti-contradiction address allows Vicky to spend the inputs if she can reveal two valid preimages for a given gate. 
+
+It contain two types of leaves:
+1. *Leaf Type 1:* This type of leaf contains an anti-contradiction script. 
+It requires Vicky to reveal a valid preimage pair `<preimage_0>` `<preimage_1>` for a wire in order to spend the inputs of the address. 
+There will be one of these leafs for each wire in the circuit. 
+2. *Leaf Type 2:* This leaf allows Paul to spend the inputs of the address after 10 blocks. 
+
+Paul and Vicky should both generate this address independently, then compare the addresses to make sure they are the same.
 
 ```javascript
+/* The anti_contradiction_template script fragement accepts two inputs <preimage_1> <preimage_2>.
+It evaluates to TRUE if BOTH preimages hash to their respective hash commitments.  
+*/
 //todo: replace the last OP_1 with these two lines:
 //<Vicky’s key>
 //OP_CHECKSIG
@@ -635,6 +727,7 @@ subsequent_commitment_hashes.forEach( hash_pair => {
     anti_contradiction_scripts.push( leaf );
 });
 
+// The last_leaf script will allow Paul to spend the inputs after 10 blocks have passed. 
 var last_leaf = [
     "OP_10",
     "OP_CHECKSEQUENCEVERIFY",
@@ -645,6 +738,7 @@ var last_leaf = [
 
 anti_contradiction_scripts.push( last_leaf );
 
+// Generate the anti-contradiction address
 var tree = anti_contradiction_scripts.map( s => tapscript.Tap.encodeScript( s ) );
 var selected_script = anti_contradiction_scripts[ 0 ];
 var target = tapscript.Tap.encodeScript( selected_script );
@@ -655,11 +749,47 @@ var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "re
 
 # Generate the challenge address
 
+The challenge address allows Vicky to spend the inputs if a gate was evaluated incorrectly given Paul's input(s) and output. Otherwise Paul can spend the inputs after 10 blocks. 
+
+In the construction below, there are 3 types of leaves:
+1. *Leaf Type 1 - Incorrect Execution:* This type of leaf is spendable if Vicky can provide `<ouptut_preimage>` `<input_preimage(s)>` that evaluate incorrectly. Examples of this type of leaf include OP_NOT_00 and OP_AND_101. 
+2. *Leaf Type 2 - Correct Execution:* This type of leaf will always fail execution, but is included for completeness. It accepts an ouput primage and input preimage that evalutes correctly. Examples of this type of leaf include OP_NOT_01 and OP_AND_111. 
+3. *Leaf Type 3:* This leaf allows Paul to spend the inputs of the address after 10 blocks. 
+
+Paul and Vicky should both generate this address independently, then compare the addresses to make sure they are the same.
+
+
 ```javascript
 var templates = {}
 //todo: replace the last OP_1 in each template with these two lines:
 //<"Vickys_key">
 //OP_CHECKSIG
+
+
+// Below we run through two examples, OP_NOT_00 and OP_NOT_01. 
+// Notice that only INVALID execution paths (e.g. OP_NOT_00) are actually spendable scripts by Vicky. 
+
+/* Example: OP_NOT_00
+
+This script fragment accepts inputs of the form <ouput_preimage> <input_preimage>. It evaluates to TRUE if:
+a. The <input_preimage> hashes to hash commitment associated with 0 for this gate 
+AND 
+b. The <output_preimage> hashes to the hash commitment associated with 0 for this gate
+
+The full logic is below:
+    - Push the <output_preimage> to the alt stack
+    - Hash the <input_preimage>
+    - Check that the hash of the <input_preimage> is equal to the committed hash (fail if not)
+    - Push 0 to the stack
+    - OP_NOT flips the 0 to 1
+    - Push <output_preimage> from alt stack to stack
+    - Hash the <output_preimage>
+    - Check to see if the hash of the <output_preimage> is equal to the committed hash (fail if not)
+    - Push 0 to the stack
+    - OP_NUMNOTEQUAL compares the 1 created by OP_NOT to the 0 just pushed - pushes 1 to the stack
+    - OP_VERIFY consumes the 1 and pushes OP_1 (should be <Vicky's pubkey><OP_CHECKSIG>) to the stack
+Now Vicky will be able to spend the inputs by unlocking this leaf!
+*/
 templates[ "OP_NOT_00" ] = `
     OP_TOALTSTACK
     OP_SHA256
@@ -676,6 +806,27 @@ templates[ "OP_NOT_00" ] = `
     OP_VERIFY
     OP_1
 `;
+
+/* Example: OP_NOT_01
+
+This script fragment accepts inputs of the form <ouput_preimage> <input_preimage>. 
+This script fragment will always fail execution because it is a proper execution path (0 is flipped to 1).
+It is included for completeness. 
+
+The full logic is below:
+    - Push the <output_preimage> to the alt stack
+    - Hash the <input_preimage>
+    - Check that the hash of the <input_preimage> is equal to the committed hash (fail if not)
+    - Push 0 to the stack
+    - OP_NOT flips the 0 to 1
+    - Push <output_preimage> from alt stack to stack
+    - Hash the <output_preimage>
+    - Check to see if the hash of the <output_preimage> is equal to the committed hash (fail if not)
+    - Push 1 to the stack
+    - OP_NUMNOTEQUAL compares the 1 created by OP_NOT to the 1 just pushed. 
+    !! THIS WILL ALWAYS FAIL !!
+
+*/
 templates[ "OP_NOT_01" ] = `
     OP_TOALTSTACK
     OP_SHA256
@@ -1063,10 +1214,17 @@ templates[ "OP_XOR_111" ] = `
 
 var challenge_scripts = [];
 
+// Populate the challenge scripts for each operation in the operations_array
 var i; for ( i=0; i<operations_array.length; i++ ) {
+
+    // If the operation is INV...
     if ( operations_array[ i ][ 0 ] == "INV" ) {
+
+        // Get the input hash pair and ouptut hash pair from the operations_array
         var input_hash_pair = [ operations_array[ i ][ 3 ][ 1 ], operations_array[ i ][ 3 ][ 2 ] ];
         var output_hash_pair = [ operations_array[ i ][ 4 ][ 1 ], operations_array[ i ][ 4 ][ 2 ] ];
+
+        // Create the Script template for each combination of input/output hashes: [00, 01, 10, 11]
         var filled_in_templates = [];
         filled_in_templates.push(
             templates[ "OP_NOT_00" ].replace( "INSERT_INPUT_HERE", input_hash_pair[ 0 ] ).replace( "INSERT_OUTPUT_HERE", output_hash_pair[ 0 ] ),
@@ -1074,6 +1232,8 @@ var i; for ( i=0; i<operations_array.length; i++ ) {
             templates[ "OP_NOT_10" ].replace( "INSERT_INPUT_HERE", input_hash_pair[ 1 ] ).replace( "INSERT_OUTPUT_HERE", output_hash_pair[ 0 ] ),
             templates[ "OP_NOT_11" ].replace( "INSERT_INPUT_HERE", input_hash_pair[ 1 ] ).replace( "INSERT_OUTPUT_HERE", output_hash_pair[ 1 ] )
         );
+
+        // Add each template as a leaf to the challenge script
         filled_in_templates.forEach( template => {
             var leaf = template.replaceAll( "\n\n", "\n" ).replaceAll( " ", "" ).split( "\n" );
             leaf.splice( 0, 1 );
@@ -1081,6 +1241,8 @@ var i; for ( i=0; i<operations_array.length; i++ ) {
             challenge_scripts.push( leaf );
         });
     }
+
+    // Repeat the same process as above but for AND and XOR gates
     if ( operations_array[ i ][ 0 ] == "AND" ) {
         var first_hash_pair = [ operations_array[ i ][ 4 ][ 1 ], operations_array[ i ][ 4 ][ 2 ] ];
         var second_hash_pair = [ operations_array[ i ][ 5 ][ 1 ], operations_array[ i ][ 5 ][ 2 ] ];
@@ -1127,6 +1289,7 @@ var i; for ( i=0; i<operations_array.length; i++ ) {
     }
 }
 
+// Add a final leaf that allows Paul to spend the inputs if 10 blocks have passed
 var last_leaf = [
     "OP_10",
     "OP_CHECKSEQUENCEVERIFY",
@@ -1137,6 +1300,7 @@ var last_leaf = [
 
 challenge_scripts.push( last_leaf );
 
+// Generate the Taproot Address
 var tree = challenge_scripts.map( s => tapscript.Tap.encodeScript( s ) );
 var selected_script = challenge_scripts[ challenge_scripts.length - 1 ];
 var target = tapscript.Tap.encodeScript( selected_script );
@@ -1153,15 +1317,42 @@ At this point, Paul should reveal his 64 input bits. Previously, he shared an ar
 var preimages_to_reveal = [];
 var wires = [];
 
+/* 
+Loop through the committed preimages and for every wire in the circuit push:
+  a. 0 to the wires array, and 
+  b. the 32-byte preimage associated with 0 to the preimages_to_reveal array
+*/
+
 initial_commitment_preimages.forEach( ( preimage_pair, index ) => {
     wires.push( 0 );
     preimages_to_reveal.push( preimage_pair[ 0 ] );
 });
 
+
+/* 
+Loop through the gates, run the eval, and get the result and next preimage
+
+Recall that the operations array for INV looked like this:
+operations_array.push( 
+    ["INV", 
+    ["input_preimages", input_preimage_0, input_preimage_1], 
+    ["output_preimages", output_preimage_0, output_preimage_1], 
+    ["input_hashes", input_hash_0, input_hash_1], 
+    ["output_hashes", output_hash_0, output_hash_1], 
+    `var w_${gate[ 3 ]} = INV( wires[ ${gate[ 2 ]} ] )`
+] );
+*/
+
 var i; for ( i=0; i<operations_array.length; i++ ) {
+    // Get the function to eval that we stored in the operations array (e.g. INV( w_63) from 'var w_65 = INV( w_63 )')
     var fn_to_run = operations_array[ i ][ operations_array[ i ].length - 1 ].split( "= " )[ 1 ];
+
+    // Eval the function to get the next preimage and push the resulting (0,1) to the wire array
     var preimage_to_reveal = eval( fn_to_run );
     wires.push( preimage_to_reveal );
+
+    // Add 1 to preimage_to_reveal to update it to the proper corresponding index in the operations_array. 
+    // Then push the actual 32 byte preimage to preimages_to_reveal
     preimage_to_reveal = Number( preimage_to_reveal ) + 1;
     if ( operations_array[ i ][ 0 ] == "INV" ) preimages_to_reveal.push( operations_array[ i ][ 2 ][ preimage_to_reveal ] );
     if ( operations_array[ i ][ 0 ] == "AND" ) preimages_to_reveal.push( operations_array[ i ][ 3 ][ preimage_to_reveal ] );
@@ -1391,6 +1582,8 @@ TODO: actually create and test the funding address.
 # Execution
 
 Now the protocol is ready: Paul and Vicky fund the funding address, 1000 sats from Vicky to pay Paul for the computation, and 10000 sats from Paul in case he does not perform the computation correctly. Next, Paul reveals his preimages to Vicky. If he does not, she puts his money into the bit commitment address to *force* him to, or she will get 10000 sats from him if he *still* doesn't. Assuming Paul reveals the preimages, Vicky checks that the corresponding bits, when passed as input to the bristol circuit, produce a valid path that results in the expected value. If they do, great! After 10 blocks, Paul can take back his 10000 sats *and* Vicky's 1000 sat payment. But if Paul's input bits do not produce a valid result, Vicky can use either the anti-contradiction address or the challenge address to take Paul's 10000 sats.
+
+TW Note: The anti-contradiction address allows Vicky to take Paul's sats if he evaluated a gate incorrectly? 
 
 # Conclusion
 
