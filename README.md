@@ -154,6 +154,8 @@ If the above function outputs a 1 then every input bit was a 0, otherwise at lea
 To convert, run, and validate a bristol circuit in a taproot address we need several dependencies.
 
 ```javascript
+// Helper functions
+
 var sha256 = s => {
     if ( typeof s == "string" ) s = new TextEncoder().encode( s );
     return crypto.subtle.digest( 'SHA-256', s ).then( hashBuffer => {
@@ -416,21 +418,23 @@ For each gate in the array, map two arrays to it: an array of input hashes and a
 ```javascript
 // Initialize a wire_settings object and an operations_arrary list. 
 
-/* wire_settings is an object that stores data in the following format: 
-{'wire_num': [preimage_0, preimage_1]}
+/* 
+wire_settings is an object that stores data in the following format: 
+    {'wire_num': [preimage_0, preimage_1]}
 
 This maps a sepcific wire (e.g. 63) to an array that contains two random 32 byte numbers ("preimages") that represent 0 and 1 for that wire. 
 */
 var wire_settings = {};
 
-/* operations_array is a list of lists. Each sublist consists of: 
- - operation
- - input preimages 
- - output preimages
- - input preimage hashes 
- - output preimage hashes
- - function mapping the input wire vaule to the output wire value
- */
+/* 
+operations_array is a list of lists. Each sublist consists of: 
+     - operation
+     - input preimages 
+     - output preimages
+     - input preimage hashes 
+     - output preimage hashes
+     - function mapping the input wire vaule to the output wire value
+*/
 var operations_array = [];
 
 // Populate the operations away and wire_settings variables
@@ -581,9 +585,11 @@ Now Paul must share the commitment hashes with Vicky, namely, initial_commitment
 The bit commitment address will contain 3 leaves:
 1. *Leaf 1:* Allows Vicky to spend the inputs of the bit commitment address after 10 blocks have passed.
 2. *Leaf 2:* Allows Paul and Vicky to cooperatively sign a 2/2 multisig to spend the inputs at any time.
-3. *Leaf 3:* Contains the actual bit commitment. Allows Paul to spend the inputs if he provides a Requires Paul to provide a valid full program trace in order to spend the inputs. 
+3. *Leaf 3:* Contains the actual bit commitment. Allows Paul to spend the inputs if he provides a valid execution trace. 
 
-This address is where Vicky will send funds if she believes Paul is misbehaving, because it forces him to provide a full trace of a valid program in order to spend the inputs. If he cannot, then Vicky can spend inputs after 10 blocks. This will be one of the three addresses used in the challenge-response proving system discussed later. 
+(todo: Leaf 3 needs to be updated to only allow Paul (with a presigned signature from Vicky) to send the funds to the challenge address if he provides a full execution trace.)
+
+This address is where Vicky will send funds if she believes Paul is misbehaving. It forces him to provide a full trace of a program in order to spend the inputs. If he cannot, then Vicky can spend inputs after 10 blocks. This will be one of the three addresses used in the challenge-response proving system discussed later. 
 
 One thing to note is that the creation of this (and the following two) addresses only relies on knowing the *hashes of the preimages* not the preimages themselves. 
 
@@ -620,6 +626,9 @@ var leaf2 = [
 
 The bit_commitment_template script fragment accepts two inputs <preimage_1> <preimage_2>. If EITHER preimage hashes to the committed preimage_hash, then the fragment is TRUE. This fragment will be repeated for every wire to create the entire bit_commitment_script. Thus, if Paul provided the full trace of a valid program he would be able to spend via this leaf. 
 */
+
+//todo: Update leaf 3 script such that by providing a valid execution trace, Paul can only send to the challenge address. 
+
 var bit_commitment_template = `
     OP_SHA256
     INSERT_16_BYTE_HERE
@@ -676,7 +685,9 @@ var bit_commitment_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "regtes
 The anti-contradiction address allows Vicky to spend the inputs if she can reveal two valid preimages for a given gate. 
 
 It contain two types of leaves:
-1. *Leaf Type 1:* This type of leaf contains an anti-contradiction script. It requires Vicky to reveal a valid preimage pair `<preimage_0> <preimage_1>` for a wire in order to spend the inputs of the address. There will be one of these leafs for each wire in the circuit. 
+1. *Leaf Type 1:* This type of leaf contains an anti-contradiction script. 
+It requires Vicky to reveal a valid preimage pair `<preimage_0>` `<preimage_1>` for a wire in order to spend the inputs of the address. 
+There will be one of these leafs for each wire in the circuit. 
 2. *Leaf Type 2:* This leaf allows Paul to spend the inputs of the address after 10 blocks. 
 
 Paul and Vicky should both generate this address independently, then compare the addresses to make sure they are the same.
@@ -741,7 +752,7 @@ var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey( tpubkey, "re
 The challenge address allows Vicky to spend the inputs if a gate was evaluated incorrectly given Paul's input(s) and output. Otherwise Paul can spend the inputs after 10 blocks. 
 
 In the construction below, there are 3 types of leaves:
-1. *Leaf Type 1 - Incorrect Execution:* This type of leaf is spendable if Vicky can provide a valid set of `<ouptut_preimage> <input_preimage(s)>` that evaluates incorrectly. Examples of this type of leaf include OP_NOT_00 and OP_AND_101. 
+1. *Leaf Type 1 - Incorrect Execution:* This type of leaf is spendable if Vicky can provide `<ouptut_preimage>` `<input_preimage(s)>` that evaluate incorrectly. Examples of this type of leaf include OP_NOT_00 and OP_AND_101. 
 2. *Leaf Type 2 - Correct Execution:* This type of leaf will always fail execution, but is included for completeness. It accepts an ouput primage and input preimage that evalutes correctly. Examples of this type of leaf include OP_NOT_01 and OP_AND_111. 
 3. *Leaf Type 3:* This leaf allows Paul to spend the inputs of the address after 10 blocks. 
 
@@ -798,10 +809,9 @@ templates[ "OP_NOT_00" ] = `
 
 /* Example: OP_NOT_01
 
-This script fragment accepts inputs of the form <ouput_preimage> <input_preimage>. It evaluates to TRUE if:
-a. The <input_preimage> hashes to hash commitment associated with 0 for this gate 
-AND 
-b. The <output_preimage> hashes to the hash commitment associated with 0 for this gate
+This script fragment accepts inputs of the form <ouput_preimage> <input_preimage>. 
+This script fragment will always fail execution because it is a proper execution path (0 is flipped to 1).
+It is included for completeness. 
 
 The full logic is below:
     - Push the <output_preimage> to the alt stack
@@ -815,7 +825,7 @@ The full logic is below:
     - Push 1 to the stack
     - OP_NUMNOTEQUAL compares the 1 created by OP_NOT to the 1 just pushed. 
     !! THIS WILL ALWAYS FAIL !!
-Since OP_NOT_01 is a proper execution path (0 is flipped to 1), this script path will never be spendable. It is included for completeness. 
+
 */
 templates[ "OP_NOT_01" ] = `
     OP_TOALTSTACK
