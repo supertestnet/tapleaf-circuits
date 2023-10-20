@@ -11,7 +11,7 @@ The following is what the zero-checking circuit looks like in [bristol format](h
 
 Note that bristol format is not very human readable. It's a blueprint for manufacturing microchips. The first line defines how many "gates" and "wires" are needed in the circuit (in this case there are 127 gates and 191 wires), the second defines how many "input" wires will contribute input bits to the function (in this case, there is 1 input to the function and it consists of 64 bits), and how many "output" wires will come out of the circuit (in this case, 1 wire will inform us whether all 64 input bits were 0s or not). 
 
-The rest of the lines define the operating instructions for each of the wires and gates. It operates via the format `# input wires` `# output wires` `input wire(s)` `output wire(s)` `gate`. So the first operating instruction takes in wire 63, flips the bit, and outputs the result to wire 65. The thrid operating instruction takes in wires 64 and 65, computes 64 AND 65, and ouputs the result to wire 69. 
+The rest of the lines define the operating instructions for each of the wires and gates. It operates via the format `# input wires` `# output wires` `input wire(s)` `output wire(s)` `gate`. So the first operating instruction takes in wire 63, flips the bit, and outputs the result to wire 65. The thrid operating instruction takes in wires 64 and 65, computes 64 AND 65, and outputs the result to wire 69. 
 
 ```
 127 191
