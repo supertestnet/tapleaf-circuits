@@ -1,6 +1,10 @@
 # Tapleaf circuits
 A proof-of-concept implementation of BitVM for bristol circuits
 
+# How to try it
+
+Just click here: https://supertestnet.github.io/tapleaf-circuits
+
 # Overview
 
 As outlined in the [BitVM whitepaper](https://bitvm.org/bitvm.pdf), Bitcoin can verify the correct execution of any boolean circuit and penalize its incorrect execution. This makes it functionally equivalent to a turing complete programming environment. This document outlines a protocol by which a prover, Paul, and a verifier, Vicky, agree on an arbitrary boolean circuit and then encode it inside tapleaves in a taproot address. Thereupon, they may fund the address in such a way that Paul is paid if he executes the script correctly but Vicky is paid if he does not.
