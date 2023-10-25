@@ -24,3 +24,9 @@ var XOR = (a, b) => Number(a ^ b);
 var INV = (a) => Number(!a);
 
 var reverseString = s => s.match(/.{1}/g).reverse().join('');
+
+var waitSomeSeconds = num => {
+    var num = num.toString() + "000";
+    num = Number(num);
+    return new Promise(resolve => setTimeout(resolve, num));
+}
