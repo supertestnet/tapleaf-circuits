@@ -1,4 +1,4 @@
-var bristol_circuit_addition = `
+var circuit_bristol_addition = `
 154 218
 2 32 32
 1 32

@@ -73,8 +73,12 @@ var makeBristolArray = () => {
     if (arr[3]) alert("Oops, you entered an invalid bristol circuit! Try again with the whole document, including the first three lines that define the number of gates, number of input bits, and number of output bits.");
     number_of_preimages_to_expect = arr[0].split(" ").filter(item => item)[1];
     number_of_preimages_to_expect = Number(number_of_preimages_to_expect);
+    number_of_numbers_being_passed_as_input = arr[1].split(" ").filter(item => item)[0];
+    number_of_numbers_being_passed_as_input = Number(number_of_numbers_being_passed_as_input);
     number_of_inputs = arr[1].split(" ").filter(item => item)[1];
     number_of_inputs = Number(number_of_inputs);
+    if (arr[1].split(" ").filter(item => item)[2]) number_of_inputs_2 = arr[1].split(" ").filter(item => item)[2];
+    if (number_of_inputs_2) number_of_inputs_2 = Number(number_of_inputs_2);
     number_of_outputs = arr[2].split(" ").filter(item => item)[1];
     number_of_outputs = Number(number_of_outputs);
     arr.splice(0, 4);
@@ -168,6 +172,223 @@ setOperationsArray = async () => {
     }
 }
 
+setOperationsArrayVerifier = async () => {
+    var index; for (index = 0; index < arr.length; index++) {
+        var gate = arr[index].split(" ").filter(item => item);
+        if (gate[gate.length - 1] == "INV") {
+            if (!wire_settings[gate[2]]) {
+                var input_preimage_0 = getRand(32);
+                var input_preimage_1 = getRand(32);
+                wire_settings[gate[2]] = [input_preimage_0, input_preimage_1];
+            } else {
+                var input_preimage_0 = wire_settings[gate[2]][0];
+                var input_preimage_1 = wire_settings[gate[2]][1];
+            }
+            var output_preimage_0 = copy_of_wire_settings[gate[3]][0];
+            var output_preimage_1 = copy_of_wire_settings[gate[3]][1];
+            var copy_of_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][0]));
+            var copy_of_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][1]));
+            var hash_info = findHashesInCopy(copy_of_input_hash_0, copy_of_input_hash_1);
+            var index_of_input_hashes = hash_info[0];
+            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+            var input_hash_0 = array_to_use[index_of_input_hashes][0];
+            var input_hash_1 = array_to_use[index_of_input_hashes][1];
+            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [input_hash_0, input_hash_1];
+            var hash_info_test = JSON.parse(JSON.stringify(hash_info));
+            //Vicky should be able to view the output hashes in her own copies of operations_array and
+            //subsequent_commitment_hashes that she creates. Then she can grab the "right" hashes from
+            //the corresponding indices of the "real" subsequent_commitment_hashes she gets from Paul
+            var copy_of_output_hash_0 = await sha256(hexToBytes(output_preimage_0));
+            var copy_of_output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+            var hash_info = findHashesInCopy(copy_of_output_hash_0, copy_of_output_hash_1);
+            var index_of_output_hashes = hash_info[0];
+            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+            var real_output_hash_0 = array_to_use[index_of_output_hashes][0];
+            var real_output_hash_1 = array_to_use[index_of_output_hashes][1];
+            wire_settings[gate[3]] = [output_preimage_0, output_preimage_1];
+            wire_hashes[gate[3]] = [real_output_hash_0, real_output_hash_1];
+            operations_array.push(["INV", ["input_preimages", input_preimage_0, input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["input_hashes", input_hash_0, input_hash_1], ["output_hashes", real_output_hash_0, real_output_hash_1], `var w_${gate[3]} = INV( wires[ ${gate[2]} ] )`]);
+        }
+        if (gate[gate.length - 1] == "AND") {
+            if (!wire_settings[gate[2]]) {
+                var first_input_preimage_0 = getRand(32);
+                var first_input_preimage_1 = getRand(32);
+                wire_settings[gate[2]] = [first_input_preimage_0, first_input_preimage_1];
+            } else {
+                var first_input_preimage_0 = wire_settings[gate[2]][0];
+                var first_input_preimage_1 = wire_settings[gate[2]][1];
+            }
+            if (!wire_settings[gate[3]]) {
+                var second_input_preimage_0 = getRand(32);
+                var second_input_preimage_1 = getRand(32);
+                wire_settings[gate[3]] = [second_input_preimage_0, second_input_preimage_1];
+            } else {
+                var second_input_preimage_0 = wire_settings[gate[3]][0];
+                var second_input_preimage_1 = wire_settings[gate[3]][1];
+            }
+            var output_preimage_0 = copy_of_wire_settings[gate[4]][0];
+            var output_preimage_1 = copy_of_wire_settings[gate[4]][1];
+            var copy_of_first_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][0]));
+            var copy_of_first_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][1]));
+            var hash_info = findHashesInCopy(copy_of_first_input_hash_0, copy_of_first_input_hash_1);
+            var index_of_first_input_hashes = hash_info[0];
+            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+            var first_input_hash_0 = array_to_use[index_of_first_input_hashes][0];
+            var first_input_hash_1 = array_to_use[index_of_first_input_hashes][1];
+            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [first_input_hash_0, first_input_hash_1];
+            var copy_of_second_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][0]));
+            var copy_of_second_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][1]));
+            var hash_info = findHashesInCopy(copy_of_second_input_hash_0, copy_of_second_input_hash_1);
+            var index_of_second_input_hashes = hash_info[0];
+            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+            var second_input_hash_0 = array_to_use[index_of_second_input_hashes][0];
+            var second_input_hash_1 = array_to_use[index_of_second_input_hashes][1];
+            if (!wire_hashes[gate[3]]) wire_hashes[gate[3]] = [second_input_hash_0, second_input_hash_1];
+            var copy_of_output_hash_0 = await sha256(hexToBytes(output_preimage_0));
+            var copy_of_output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+            var hash_info = findHashesInCopy(copy_of_output_hash_0, copy_of_output_hash_1);
+            var index_of_output_hashes = hash_info[0];
+            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+            var real_output_hash_0 = array_to_use[index_of_output_hashes][0];
+            var real_output_hash_1 = array_to_use[index_of_output_hashes][1];
+            wire_settings[gate[4]] = [output_preimage_0, output_preimage_1];
+            wire_hashes[gate[4]] = [real_output_hash_0, real_output_hash_1];
+            operations_array.push(["AND", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", real_output_hash_0, real_output_hash_1], `var w_${gate[4]} = AND( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`]);
+        }
+        if (gate[gate.length - 1] == "XOR") {
+            if (!wire_settings[gate[2]]) {
+                var first_input_preimage_0 = getRand(32);
+                var first_input_preimage_1 = getRand(32);
+                wire_settings[gate[2]] = [first_input_preimage_0, first_input_preimage_1];
+            } else {
+                var first_input_preimage_0 = wire_settings[gate[2]][0];
+                var first_input_preimage_1 = wire_settings[gate[2]][1];
+            }
+            if (!wire_settings[gate[3]]) {
+                var second_input_preimage_0 = getRand(32);
+                var second_input_preimage_1 = getRand(32);
+                wire_settings[gate[3]] = [second_input_preimage_0, second_input_preimage_1];
+            } else {
+                var second_input_preimage_0 = wire_settings[gate[3]][0];
+                var second_input_preimage_1 = wire_settings[gate[3]][1];
+            }
+            var output_preimage_0 = copy_of_wire_settings[gate[4]][0];
+            var output_preimage_1 = copy_of_wire_settings[gate[4]][1];
+            var copy_of_first_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][0]));
+            var copy_of_first_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][1]));
+            var hash_info = findHashesInCopy(copy_of_first_input_hash_0, copy_of_first_input_hash_1);
+            var index_of_first_input_hashes = hash_info[0];
+            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+            var first_input_hash_0 = array_to_use[index_of_first_input_hashes][0];
+            var first_input_hash_1 = array_to_use[index_of_first_input_hashes][1];
+            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [first_input_hash_0, first_input_hash_1];
+            var copy_of_second_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][0]));
+            var copy_of_second_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][1]));
+            var hash_info = findHashesInCopy(copy_of_second_input_hash_0, copy_of_second_input_hash_1);
+            var index_of_second_input_hashes = hash_info[0];
+            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+            var second_input_hash_0 = array_to_use[index_of_second_input_hashes][0];
+            var second_input_hash_1 = array_to_use[index_of_second_input_hashes][1];
+            if (!wire_hashes[gate[3]]) wire_hashes[gate[3]] = [second_input_hash_0, second_input_hash_1];
+            var copy_of_output_hash_0 = await sha256(hexToBytes(output_preimage_0));
+            var copy_of_output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+            var hash_info = findHashesInCopy(copy_of_output_hash_0, copy_of_output_hash_1);
+            var index_of_output_hashes = hash_info[0];
+            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+            var real_output_hash_0 = array_to_use[index_of_output_hashes][0];
+            var real_output_hash_1 = array_to_use[index_of_output_hashes][1];
+            wire_settings[gate[4]] = [output_preimage_0, output_preimage_1];
+            wire_hashes[gate[4]] = [real_output_hash_0, real_output_hash_1];
+            operations_array.push(["XOR", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", real_output_hash_0, real_output_hash_1], `var w_${gate[4]} = XOR( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`]);
+        }
+    }
+}
+
+var copyOfSetOperationsArray = async () => {
+    var index; for (index = 0; index < arr.length; index++) {
+        var gate = arr[index].split(" ").filter(item => item);
+        if (gate[gate.length - 1] == "INV") {
+            if (!copy_of_wire_settings[gate[2]]) {
+                var input_preimage_0 = getRand(32);
+                var input_preimage_1 = getRand(32);
+                copy_of_wire_settings[gate[2]] = [input_preimage_0, input_preimage_1];
+            } else {
+                var input_preimage_0 = copy_of_wire_settings[gate[2]][0];
+                var input_preimage_1 = copy_of_wire_settings[gate[2]][1];
+            }
+            var output_preimage_0 = getRand(32);
+            var output_preimage_1 = getRand(32);
+            var input_hash_0 = await sha256(hexToBytes(input_preimage_0));
+            var input_hash_1 = await sha256(hexToBytes(input_preimage_1));
+            if (!copy_of_initial_commitment_hashes[gate[2]]) copy_of_initial_commitment_hashes[gate[2]] = [input_hash_0, input_hash_1];
+            var output_hash_0 = await sha256(hexToBytes(output_preimage_0));
+            var output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+            copy_of_wire_settings[gate[3]] = [output_preimage_0, output_preimage_1];
+            copy_of_operations_array.push(["INV", ["input_preimages", input_preimage_0, input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["input_hashes", input_hash_0, input_hash_1], ["output_hashes", output_hash_0, output_hash_1], `var w_${gate[3]} = INV( wires[ ${gate[2]} ] )`]);
+        }
+        if (gate[gate.length - 1] == "AND") {
+            if (!copy_of_wire_settings[gate[2]]) {
+                var first_input_preimage_0 = getRand(32);
+                var first_input_preimage_1 = getRand(32);
+                copy_of_wire_settings[gate[2]] = [first_input_preimage_0, first_input_preimage_1];
+            } else {
+                var first_input_preimage_0 = copy_of_wire_settings[gate[2]][0];
+                var first_input_preimage_1 = copy_of_wire_settings[gate[2]][1];
+            }
+            if (!copy_of_wire_settings[gate[3]]) {
+                var second_input_preimage_0 = getRand(32);
+                var second_input_preimage_1 = getRand(32);
+                copy_of_wire_settings[gate[3]] = [second_input_preimage_0, second_input_preimage_1];
+            } else {
+                var second_input_preimage_0 = copy_of_wire_settings[gate[3]][0];
+                var second_input_preimage_1 = copy_of_wire_settings[gate[3]][1];
+            }
+            var output_preimage_0 = getRand(32);
+            var output_preimage_1 = getRand(32);
+            var first_input_hash_0 = await sha256(hexToBytes(first_input_preimage_0));
+            var first_input_hash_1 = await sha256(hexToBytes(first_input_preimage_1));
+            if (!copy_of_initial_commitment_hashes[gate[2]]) copy_of_initial_commitment_hashes[gate[2]] = [first_input_hash_0, first_input_hash_1];
+            var second_input_hash_0 = await sha256(hexToBytes(second_input_preimage_0));
+            var second_input_hash_1 = await sha256(hexToBytes(second_input_preimage_1));
+            if (!copy_of_initial_commitment_hashes[gate[3]]) copy_of_initial_commitment_hashes[gate[3]] = [second_input_hash_0, second_input_hash_1];
+            var output_hash_0 = await sha256(hexToBytes(output_preimage_0));
+            var output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+            copy_of_wire_settings[gate[4]] = [output_preimage_0, output_preimage_1];
+            copy_of_operations_array.push(["AND", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", output_hash_0, output_hash_1], `var w_${gate[4]} = AND( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`]);
+        }
+        if (gate[gate.length - 1] == "XOR") {
+            if (!copy_of_wire_settings[gate[2]]) {
+                var first_input_preimage_0 = getRand(32);
+                var first_input_preimage_1 = getRand(32);
+                copy_of_wire_settings[gate[2]] = [first_input_preimage_0, first_input_preimage_1];
+            } else {
+                var first_input_preimage_0 = copy_of_wire_settings[gate[2]][0];
+                var first_input_preimage_1 = copy_of_wire_settings[gate[2]][1];
+            }
+            if (!copy_of_wire_settings[gate[3]]) {
+                var second_input_preimage_0 = getRand(32);
+                var second_input_preimage_1 = getRand(32);
+                copy_of_wire_settings[gate[3]] = [second_input_preimage_0, second_input_preimage_1];
+            } else {
+                var second_input_preimage_0 = copy_of_wire_settings[gate[3]][0];
+                var second_input_preimage_1 = copy_of_wire_settings[gate[3]][1];
+            }
+            var output_preimage_0 = getRand(32);
+            var output_preimage_1 = getRand(32);
+            var first_input_hash_0 = await sha256(hexToBytes(first_input_preimage_0));
+            var first_input_hash_1 = await sha256(hexToBytes(first_input_preimage_1));
+            if (!copy_of_initial_commitment_hashes[gate[2]]) copy_of_initial_commitment_hashes[gate[2]] = [first_input_hash_0, first_input_hash_1];
+            var second_input_hash_0 = await sha256(hexToBytes(second_input_preimage_0));
+            var second_input_hash_1 = await sha256(hexToBytes(second_input_preimage_1));
+            if (!copy_of_initial_commitment_hashes[gate[3]]) copy_of_initial_commitment_hashes[gate[3]] = [second_input_hash_0, second_input_hash_1];
+            var output_hash_0 = await sha256(hexToBytes(output_preimage_0));
+            var output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+            copy_of_wire_settings[gate[4]] = [output_preimage_0, output_preimage_1];
+            copy_of_operations_array.push(["XOR", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", output_hash_0, output_hash_1], `var w_${gate[4]} = XOR( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`]);
+        }
+    }
+}
+
 var generateBitCommitments = async () => {
     var i; for (i = 0; i < 64; i++) {
         initial_commitment_preimages.push(wire_settings[String(i)]);
@@ -191,20 +412,20 @@ function saveData(data, fileName) {
     window.URL.revokeObjectURL(url);
 }
 
-var generateBitCommitmentAddress = pubkey => {
+var generateBitCommitmentAddress = (proverPubkey, verifierPubkey) => {
     var leaf1 = [
         "OP_10",
         "OP_CHECKSEQUENCEVERIFY",
         "OP_DROP",
-        vickys_key,
+        verifierPubkey,
         "OP_CHECKSIG"
     ];
 
     var leaf2 = [
         "OP_0",
-        pubkey,
+        proverPubkey,
         "OP_CHECKSIGADD",
-        vickys_key,
+        verifierPubkey,
         "OP_CHECKSIGADD",
         "OP_2",
         "OP_EQUAL"
@@ -233,7 +454,7 @@ var generateBitCommitmentAddress = pubkey => {
     });
 
     bit_commitment_script += `
-       ${pubkey}
+       ${proverPubkey}
        OP_CHECKSIG
     `;
 
@@ -265,7 +486,7 @@ var generateBitCommitmentAddress = pubkey => {
     return bit_commitment_address;
 }
 
-var generateAntiContradictionAddress = pubkey => {
+var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
     var anti_contradiction_template = `
         OP_SHA256
         INSERT_16_BYTE_HERE
@@ -273,7 +494,7 @@ var generateAntiContradictionAddress = pubkey => {
         OP_SHA256
         INSERT_17_BYTE_HERE
         OP_EQUALVERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
 
@@ -299,7 +520,7 @@ var generateAntiContradictionAddress = pubkey => {
         "OP_10",
         "OP_CHECKSEQUENCEVERIFY",
         "OP_DROP",
-        pubkey,
+        proverPubkey,
         "OP_CHECKSIG"
     ];
 
@@ -318,7 +539,7 @@ var generateAntiContradictionAddress = pubkey => {
     return anti_contradiction_address;
 }
 
-var generateChallengeAddress = pubkey => {
+var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
     var templates = {}
     templates["OP_NOT_00"] = `
         OP_TOALTSTACK
@@ -334,7 +555,7 @@ var generateChallengeAddress = pubkey => {
         OP_0
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_NOT_01"] = `
@@ -351,7 +572,7 @@ var generateChallengeAddress = pubkey => {
         OP_1
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_NOT_10"] = `
@@ -368,7 +589,7 @@ var generateChallengeAddress = pubkey => {
         OP_0
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_NOT_11"] = `
@@ -385,7 +606,7 @@ var generateChallengeAddress = pubkey => {
         OP_1
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_BOOLAND_000"] = `
@@ -407,7 +628,7 @@ var generateChallengeAddress = pubkey => {
         OP_0
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_BOOLAND_001"] = `
@@ -429,7 +650,7 @@ var generateChallengeAddress = pubkey => {
         OP_1
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_BOOLAND_010"] = `
@@ -451,7 +672,7 @@ var generateChallengeAddress = pubkey => {
         OP_0
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_BOOLAND_011"] = `
@@ -473,7 +694,7 @@ var generateChallengeAddress = pubkey => {
         OP_1
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_BOOLAND_100"] = `
@@ -495,7 +716,7 @@ var generateChallengeAddress = pubkey => {
         OP_0
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_BOOLAND_101"] = `
@@ -517,7 +738,7 @@ var generateChallengeAddress = pubkey => {
         OP_1
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_BOOLAND_110"] = `
@@ -539,7 +760,7 @@ var generateChallengeAddress = pubkey => {
         OP_0
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_BOOLAND_111"] = `
@@ -561,7 +782,7 @@ var generateChallengeAddress = pubkey => {
         OP_1
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_XOR_000"] = `
@@ -583,7 +804,7 @@ var generateChallengeAddress = pubkey => {
         OP_0
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_XOR_001"] = `
@@ -605,7 +826,7 @@ var generateChallengeAddress = pubkey => {
         OP_1
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_XOR_010"] = `
@@ -627,7 +848,7 @@ var generateChallengeAddress = pubkey => {
         OP_0
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_XOR_011"] = `
@@ -649,7 +870,7 @@ var generateChallengeAddress = pubkey => {
         OP_1
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_XOR_100"] = `
@@ -671,7 +892,7 @@ var generateChallengeAddress = pubkey => {
         OP_0
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_XOR_101"] = `
@@ -693,7 +914,7 @@ var generateChallengeAddress = pubkey => {
         OP_1
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_XOR_110"] = `
@@ -715,7 +936,7 @@ var generateChallengeAddress = pubkey => {
         OP_0
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
     templates["OP_XOR_111"] = `
@@ -737,7 +958,7 @@ var generateChallengeAddress = pubkey => {
         OP_1
         OP_NUMNOTEQUAL
         OP_VERIFY
-        ${vickys_key}
+        ${verifierPubkey}
         OP_CHECKSIG
     `;
 
@@ -811,7 +1032,7 @@ var generateChallengeAddress = pubkey => {
         "OP_10",
         "OP_CHECKSEQUENCEVERIFY",
         "OP_DROP",
-        pubkey,
+        proverPubkey,
         "OP_CHECKSIG"
     ];
 
@@ -830,14 +1051,14 @@ var generateChallengeAddress = pubkey => {
     return challenge_address;
 }
 
-var generateFundingAddress = pubkey => {
-    var funding_scripts = [];
+var generateFundingAddress = (proverPubkey, verifierPubkey) => {
+    funding_scripts = [];
 
     var first_leaf = [
         "OP_10",
         "OP_CHECKSEQUENCEVERIFY",
         "OP_DROP",
-        pubkey,
+        proverPubkey,
         "OP_CHECKSIG"
     ];
 
@@ -845,9 +1066,9 @@ var generateFundingAddress = pubkey => {
 
     var second_leaf = [
         "OP_0",
-        pubkey,
+        proverPubkey,
         "OP_CHECKSIGADD",
-        vickys_key,
+        verifierPubkey,
         "OP_CHECKSIGADD",
         "OP_2",
         "OP_EQUAL"
@@ -859,6 +1080,7 @@ var generateFundingAddress = pubkey => {
     var selected_script = funding_scripts[0];
     funding_to_anywhere_else_script = funding_scripts[1];
     funding_to_paul_script = selected_script;
+    funding_script = selected_script;
     funding_to_paul_tapleaf = tapscript.Tap.encodeScript(funding_to_paul_script);
     funding_to_anywhere_else_tapleaf = tapscript.Tap.encodeScript(funding_to_anywhere_else_script);
     var target = tapscript.Tap.encodeScript(selected_script);
@@ -866,8 +1088,43 @@ var generateFundingAddress = pubkey => {
     var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target });
     funding_to_paul_tpubkey = tpubkey;
     funding_to_paul_cblock = cblock;
+    funding_tpubkey = tpubkey;
+    funding_cblock = cblock;
     var [tpubkey, alt_cblock] = tapscript.Tap.getPubKey(pubkey, { tree, funding_to_anywhere_else_tapleaf });
     funding_to_anywhere_else_cblock = alt_cblock;
     var funding_address = tapscript.Address.p2tr.fromPubKey(tpubkey, network);
     return funding_address;
+}
+
+var logInputs = async () => {
+    //var input_prep = ``;
+    var j; for (j = 0; j < initial_commitment_hashes.length; j++) {
+        var index = j;
+        var input = initial_commitment_hashes[index];
+        //input_prep += `Input #${index + 1} is `;
+        var i; for (i = 0; i < preimages_from_paul.length; i++) {
+            var preimage = preimages_from_paul[i];
+            var hash = await sha256(hexToBytes(preimage));
+            if (hash == input[0]) {
+                wires[index] = 0;
+                //input_prep += `0 because the preimage to ${input[ 0 ]} was revealed (its preimage is ${preimage})\n\n`;
+                break;
+            }
+            if (hash == input[1]) {
+                wires[index] = 1;
+                //input_prep += `1 because the preimage to ${input[ 1 ]} was revealed (its preimage is ${preimage})\n\n`;
+                break;
+            }
+        }
+    }
+    //console.log( input_prep );
+}
+
+var findHashesInCopy = (hash1, hash2) => {
+    var i; for (i = 0; i < copy_of_subsequent_commitment_hashes.length; i++) {
+        if (copy_of_subsequent_commitment_hashes[i].includes(hash1) && copy_of_subsequent_commitment_hashes[i].includes(hash2)) return [i, "sub"];
+    }
+    var i; for (i = 0; i < copy_of_initial_commitment_hashes.length; i++) {
+        if (copy_of_initial_commitment_hashes[i] && copy_of_initial_commitment_hashes[i].includes(hash1) && copy_of_initial_commitment_hashes[i].includes(hash2)) return [i, "init"];
+    }
 }

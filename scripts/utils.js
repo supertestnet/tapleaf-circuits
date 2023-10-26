@@ -30,3 +30,12 @@ var waitSomeSeconds = num => {
     num = Number(num);
     return new Promise(resolve => setTimeout(resolve, num));
 }
+
+function isValidJson(content) {
+    try {
+        var json = JSON.parse(content);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}

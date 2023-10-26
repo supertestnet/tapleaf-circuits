@@ -1,4 +1,4 @@
-var bristol_curcuit_zero_checker = `
+var circuit_bristol_zero_checker = `
 127 191
 1 64 
 1 1 

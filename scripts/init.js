@@ -5,11 +5,16 @@ var url_keys = url_params.keys();
 var $_GET = {}
 for (var key of url_keys) $_GET[key] = url_params.get(key);
 
+// Common
+
 var network = "testnet";
 if ($_GET["network"] == "regtest") network = "regtest";
 var arrprep = ``;
 var arr = [];
 var number_of_preimages_to_expect = null;
+//the following line refers to the "second" number on line 2 of a bristol circuit file
+//e.g. if the second line is 2 64 32 then the following line would be 64 and it means
+//how many bits are in the first number passed to the function as input
 var number_of_inputs = null;
 var number_of_outputs = null;
 var wire_settings = {}
@@ -58,3 +63,32 @@ var preimages_to_reveal = [];
 var wires = [];
 var promise = null;
 var challenge_scripts = [];
+
+// Vicky
+
+//the following line refers to the "first" number on line 2 of a bristol circuit file
+//e.g. if the second line is 2 64 32 then the following line would be 2 and it means
+//how many numbers are being passed to the function as input
+var number_of_numbers_being_passed_as_input = null;
+//the following line refers to the "third" number on line 2 of a bristol circuit file
+//e.g. if the second line is 2 64 32 then the following line would be 32 and it means
+//how many bits are in the second number passed to the function as input
+var number_of_inputs_2 = null;
+var copy_of_wire_settings = {}
+var copy_of_operations_array = [];
+var copy_of_initial_commitment_preimages = [];
+var copy_of_initial_commitment_hashes = [];
+var copy_of_subsequent_commitment_preimages = [];
+var copy_of_subsequent_commitment_hashes = [];
+var pauls_key = null;
+var funding_scripts = null;
+var funding_tpubkey = null;
+var funding_block = null;
+var preimages_from_paul = [];
+var to_challenge_txhex = null;
+var to_challenge_txid = null;
+var to_challenge_vout = null;
+var to_challenge_amt = null;
+var program = null;
+var pauls_promise = null;
+var paul_lied = false;

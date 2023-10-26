@@ -58,10 +58,10 @@ $('.size_checker_step_two_done').onclick = () => {
     if (partial_promise == "not bigger") partial_promise = "equal to or less";
     $('.size_checker_program .step_six_promise_to_vicky').innerText = promise[1].toLowerCase();
     $('.size_checker_program .step_six_second_promise_to_vicky').innerText = promise[0];
-    bit_commitment_address = generateBitCommitmentAddress(pubkey);
-    anti_contradiction_address = generateAntiContradictionAddress(pubkey);
-    challenge_address = generateChallengeAddress(pubkey);
-    funding_address = generateFundingAddress(pubkey);
+    bit_commitment_address = generateBitCommitmentAddress(pubkey, vickys_key);
+    anti_contradiction_address = generateAntiContradictionAddress(pubkey, vickys_key);
+    challenge_address = generateChallengeAddress(pubkey, vickys_key);
+    funding_address = generateFundingAddress(pubkey, vickys_key);
     var html = `
                     <p>Funding address: ${funding_address}</p>
                     <p>Bit commitment address: ${bit_commitment_address}</p>

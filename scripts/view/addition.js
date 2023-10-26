@@ -1,7 +1,7 @@
 $('.choose_addition').onclick = async () => {
     $('.addition_program').classList.remove("hidden");
     $('.home').classList.add("hidden");
-    arrprep = bristol_circuit_addition;
+    arrprep = circuit_bristol_addition;
     makeBristolArray();
     await setOperationsArray();
     await generateBitCommitments();
@@ -50,10 +50,10 @@ $('.addition_step_two_done').onclick = () => {
     $('.addition_step_three').classList.remove("hidden");
     promise = $('.sum_num').value;
     $('.addition_program .step_six_promise_to_vicky').innerText = promise.toLowerCase();
-    bit_commitment_address = generateBitCommitmentAddress(pubkey);
-    anti_contradiction_address = generateAntiContradictionAddress(pubkey);
-    challenge_address = generateChallengeAddress(pubkey);
-    funding_address = generateFundingAddress(pubkey);
+    bit_commitment_address = generateBitCommitmentAddress(pubkey, vickys_key);
+    anti_contradiction_address = generateAntiContradictionAddress(pubkey, vickys_key);
+    challenge_address = generateChallengeAddress(pubkey, vickys_key);
+    funding_address = generateFundingAddress(pubkey, vickys_key);
     var html = `
                     <p>Funding address: ${funding_address}</p>
                     <p>Bit commitment address: ${bit_commitment_address}</p>

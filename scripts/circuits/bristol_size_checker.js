@@ -1,4 +1,4 @@
-var curcuit_bristol_size_checker = `
+var circuit_bristol_size_checker = `
 312 376
 2 32 32
 1 1
