@@ -13,7 +13,7 @@ The circuit we will evaluate in this example is a zero-checking function: it use
 
 # Interlude for coders
 
-If you're a coder you probably find my way of coding bizarre. I generally try, as much as possible, to put every line of code in one file.The fact that Paul and Vicky have separate pages in this project is a bit annoying to me. But every other coder I've ever met thinks that is horrifying, so someone helpfully made [a variant of this project](https://github.com/TechMiX/tapleaf-circuits/tree/chore/refactor-structure) where all the code is broken up into separate files, e.g. there is a vm.js file and a network.js file. Perusing through this variant was insightful to me as I found that the vm, which I previously only reckoned as about 200 lines of code, was actually (by this other person's reckoning) more than 1000 lines of code. C'est la vivre.
+If you're a coder you probably find my way of coding bizarre. I generally try, as much as possible, to put every line of code in one file. The fact that Paul and Vicky have separate pages in this project is a bit annoying to me. But every other coder I've ever met thinks that is horrifying, so someone helpfully made [a variant of this project](https://github.com/TechMiX/tapleaf-circuits/tree/chore/refactor-structure) where all the code is broken up into separate files, e.g. there is a vm.js file and a network.js file. Perusing through this variant was insightful to me as I found that the vm, which I previously only reckoned as about 200 lines of code, was actually (by this other person's reckoning) more than 1000 lines of code. C'est la vivre.
 
 # Bristol format
 
