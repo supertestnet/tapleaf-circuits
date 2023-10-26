@@ -11,6 +11,12 @@ As outlined in the [BitVM whitepaper](https://bitvm.org/bitvm.pdf), Bitcoin can 
 
 The circuit we will evaluate in this example is a zero-checking function: it uses a sequence of NOT gates and AND gates to check if the inputs to the function are 64 null vectors (“zeros”). This circuit would be useful for checking if a string, such as a hash, begins with a certain number of leading zeros, e.g. to evaluate a proof of work in a bitcoin transaction, or to validate an SPV proof that a certain utxo existed at a certain blockheight. It is also intended as a template: any computable function can be written as a boolean logic circuit and verified by simply dropping it in where the zero-checking circuit currently sits.
 
+# Interlude for coders
+
+If you're a coder you probably find my way of coding bizarre. I generally try, as much as possible, to put every line of code in one file.The fact that Paul and Vicky have separate pages in this project is a bit annoying to me. But every other coder I've ever met thinks that is horrifying, so someone helpfully made [a variant of this project](https://github.com/TechMiX/tapleaf-circuits/tree/chore/refactor-structure) where all the code is broken up into separate files, e.g. there is a vm.js file and a network.js file. Perusing through this variant was insightful to me as I found that the vm, which I previously only reckoned as about 200 lines of code, was actually (by this other person's reckoning) more than 1000 lines of code. C'est la vivre.
+
+# Bristol format
+
 The following is what the zero-checking circuit looks like in [bristol format](https://homes.esat.kuleuven.be/~nsmart/MPC/). A corresponding tapleaf circuit can be explored [here](https://gist.github.com/supertestnet/0d0064fe5d516726e624afd70ee0c687).
 
 Note that bristol format is not very human readable. It's a blueprint for manufacturing microchips. The first line defines how many "gates" and "wires" are needed in the circuit (in this case there are 127 gates and 191 wires), the second defines how many "input" wires will contribute input bits to the function (in this case, there is 1 input to the function and it consists of 64 bits), and how many "output" wires will come out of the circuit (in this case, 1 wire will inform us whether all 64 input bits were 0s or not). 
