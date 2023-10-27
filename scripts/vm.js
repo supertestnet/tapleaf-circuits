@@ -62,7 +62,7 @@ var OP_XOR = async (first_input_preimage, first_expected_input_hash, first_input
     return `you cannot spend with this tapleaf`;
 }
 
-var makeBristolArray = () => {
+var makeBristolArray = (arrprep) => {
     arr = arrprep.split(`\n`);
     arr.forEach((entry, index) => {
         arr[index] = arr[index].replace(/ +(?= )/g, "");

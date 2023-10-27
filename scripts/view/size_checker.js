@@ -1,8 +1,7 @@
 $('.choose_size_checker').onclick = async () => {
     $('.size_checker_program').classList.remove("hidden");
     $('.home').classList.add("hidden");
-    arrprep = circuit_bristol_size_checker;
-    makeBristolArray();
+    makeBristolArray(circuit_bristol_size_checker);
     await setOperationsArray();
     await generateBitCommitments();
     operations_array.forEach((operation, index) => {

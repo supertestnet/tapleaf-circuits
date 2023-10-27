@@ -9,7 +9,6 @@ for (var key of url_keys) $_GET[key] = url_params.get(key);
 
 var network = "testnet";
 if ($_GET["network"] == "regtest") network = "regtest";
-var arrprep = ``;
 var arr = [];
 var number_of_preimages_to_expect = null;
 //the following line refers to the "second" number on line 2 of a bristol circuit file
