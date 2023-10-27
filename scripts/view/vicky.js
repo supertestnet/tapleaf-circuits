@@ -42,7 +42,6 @@ async function handleBrokenPromise(i_can_spend, failed_operation, selected_scrip
     pushBTCpmt(to_challenge_txhex, "");
     setTimeout(() => { pushBTCpmt(txhex, "") }, 3000);
     $('.wait_for_sigs_div').innerHTML = `<h1>You're in luck!</h1><p>Whoa, Paul broke his promise! That means you got to take his money. Cool! BTW your transaction doing so has already been broadcasted. At any moment, your money should show up in the address you designated.</p>`;
-    await logInputs();
 }
 
 async function handleResult(json) {
@@ -189,7 +188,11 @@ async function handleResult(json) {
             }
         }
     }
-    await logInputs();
+    var r = await getInputsAndOutputFromRevealedPreimages();
+    var input_1 = r.input_1;
+    var input_2 = r.input_2
+    var output = r.output;
+    console.log("inputs and outputs:", input_1, input_2, output);
 
     if (program == "zero checker") {
         var is_or_is_not = "is";

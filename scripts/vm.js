@@ -1096,7 +1096,7 @@ var generateFundingAddress = (proverPubkey, verifierPubkey) => {
     return funding_address;
 }
 
-var logInputs = async () => {
+var getInputsAndOutputFromRevealedPreimages = async () => {
     //var input_prep = ``;
     var j; for (j = 0; j < initial_commitment_hashes.length; j++) {
         var index = j;
@@ -1148,7 +1148,8 @@ var logInputs = async () => {
     var i; for (i = number_of_preimages_to_expect - number_of_outputs; i < number_of_preimages_to_expect; i++) {
         output += String(wires[i]);
     }
-    console.log("inputs and outputs:", input_1, input_2, output);
+
+    return {input_1, input_2, output};
 }
 
 var findHashesInCopy = (hash1, hash2) => {
