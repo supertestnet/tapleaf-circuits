@@ -4,6 +4,47 @@ function getFile(input) {
     }
 }
 
+async function handleBrokenPromise(i_can_spend, failed_operation, selected_script) {
+    var tree = challenge_scripts.map(s => tapscript.Tap.encodeScript(s));
+    var target = tapscript.Tap.encodeScript(selected_script);
+    var pubkey = "ab".repeat(32);
+    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target });
+    var split_string = i_can_spend.split(" ");
+    //the order they should go in is: output first, so it can be moved to the altstack;
+    //then input 1, as it is processed first; then input 2, as it is processed next. And so on.
+    var preimages = [];
+    if (failed_operation == "OP_NOT") {
+        preimages = [split_string[6], split_string[12]];
+    } else if (failed_operation == "OP_BOOLAND") {
+        preimages = [split_string[12], split_string[6], split_string[17]];
+    } else if (failed_operation == "OP_XOR") {
+        preimages = [split_string[12], split_string[6], split_string[17]]
+    }
+    var destino = $('.vickys_bitcoin_address').value;
+    if (!destino) destino = prompt(`Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go`);
+    var txdata = tapscript.Tx.create({
+        vin: [{
+            txid: to_challenge_txid,
+            vout: to_challenge_vout,
+            prevout: {
+                value: to_challenge_amt,
+                scriptPubKey: ['OP_1', tpubkey]
+            },
+        }],
+        vout: [{
+            value: to_challenge_amt - 500,
+            scriptPubKey: tapscript.Address.toScriptPubKey(destino),
+        }]
+    });
+    var sig = tapscript.Signer.taproot.sign(privkey, txdata, 0, { extension: target });
+    txdata.vin[0].witness = [sig, ...preimages, selected_script, cblock];
+    var txhex = tapscript.Tx.encode(txdata).hex;
+    pushBTCpmt(to_challenge_txhex, "");
+    setTimeout(() => { pushBTCpmt(txhex, "") }, 3000);
+    $('.wait_for_sigs_div').innerHTML = `<h1>You're in luck!</h1><p>Whoa, Paul broke his promise! That means you got to take his money. Cool! BTW your transaction doing so has already been broadcasted. At any moment, your money should show up in the address you designated.</p>`;
+    await logInputs();
+}
+
 async function handleResult(json) {
     var starter_txid = json["starter_info"]["starter_txid"];
     var starter_vout = json["starter_info"]["starter_vout"];
@@ -132,153 +173,24 @@ async function handleResult(json) {
         if (item[0] == "OP_NOT" && item.length == 3) {
             var i_can_spend = await OP_NOT(item[1], challenge_scripts[index][2], Number(challenge_scripts[index][4].substring(challenge_scripts[index][4].length - 1)), item[2], challenge_scripts[index][8], Number(challenge_scripts[index][10].substring(challenge_scripts[index][10].length - 1)));
             if (i_can_spend.startsWith("you can spend")) {
-                if (paul_lied) continue;
-                paul_lied = true;
-                var tree = challenge_scripts.map(s => tapscript.Tap.encodeScript(s));
-                var selected_script = challenge_scripts[index];
-                var target = tapscript.Tap.encodeScript(selected_script);
-                var pubkey = "ab".repeat(32);
-                var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target });
-                var split_string = i_can_spend.split(" ");
-                //the order they should go in is: output first, so it can be moved to the altstack;
-                //then the input, so it can be processed.
-                var preimages = [split_string[6], split_string[12]];
-                var destino = $('.vickys_bitcoin_address').value;
-                if (!destino) destino = prompt(`Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go`);
-                var txdata = tapscript.Tx.create({
-                    vin: [{
-                        txid: to_challenge_txid,
-                        vout: to_challenge_vout,
-                        prevout: {
-                            value: to_challenge_amt,
-                            scriptPubKey: ['OP_1', tpubkey]
-                        },
-                    }],
-                    vout: [{
-                        value: to_challenge_amt - 500,
-                        scriptPubKey: tapscript.Address.toScriptPubKey(destino),
-                    }]
-                });
-                var sig = tapscript.Signer.taproot.sign(privkey, txdata, 0, { extension: target });
-                txdata.vin[0].witness = [sig, ...preimages, challenge_scripts[index], cblock];
-                var txhex = tapscript.Tx.encode(txdata).hex;
-                // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_NOT tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
-                pushBTCpmt(to_challenge_txhex, "");
-                setTimeout(() => { pushBTCpmt(txhex, "") }, 3000);
-                $('.wait_for_sigs_div').innerHTML = `<h1>You're in luck!</h1><p>Whoa, Paul broke his promise! That means you got to take his money. Cool! BTW your transaction doing so has already been broadcasted. At any moment, your money should show up in the address you designated.</p>`;
+                return await handleBrokenPromise(i_can_spend, item[0], challenge_scripts[index]);
             }
         }
         if (item[0] == "OP_BOOLAND" && item.length == 4) {
             var i_can_spend = await OP_BOOLAND(item[1], challenge_scripts[index][2], Number(challenge_scripts[index][4].substring(challenge_scripts[index][4].length - 1)), item[2], challenge_scripts[index][7], Number(challenge_scripts[index][9].substring(challenge_scripts[index][9].length - 1)), item[3], challenge_scripts[index][13], Number(challenge_scripts[index][15].substring(challenge_scripts[index][15].length - 1)));
             if (i_can_spend.startsWith("you can spend")) {
-                if (paul_lied) continue;
-                paul_lied = true;
-                var tree = challenge_scripts.map(s => tapscript.Tap.encodeScript(s));
-                var selected_script = challenge_scripts[index];
-                var target = tapscript.Tap.encodeScript(selected_script);
-                var pubkey = "ab".repeat(32);
-                var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target });
-                var split_string = i_can_spend.split(" ");
-                //the order they should go in is: output first, so it can be moved to the altstack;
-                //then input 1, as it is processed first; then input 2, as it is processed next.
-                var preimages = [split_string[12], split_string[6], split_string[17]];
-                var destino = $('.vickys_bitcoin_address').value;
-                if (!destino) destino = prompt(`Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go`);
-                var txdata = tapscript.Tx.create({
-                    vin: [{
-                        txid: to_challenge_txid,
-                        vout: to_challenge_vout,
-                        prevout: {
-                            value: to_challenge_amt,
-                            scriptPubKey: ['OP_1', tpubkey]
-                        },
-                    }],
-                    vout: [{
-                        value: to_challenge_amt - 500,
-                        scriptPubKey: tapscript.Address.toScriptPubKey(destino),
-                    }]
-                });
-                var sig = tapscript.Signer.taproot.sign(privkey, txdata, 0, { extension: target });
-                txdata.vin[0].witness = [sig, ...preimages, challenge_scripts[index], cblock];
-                var txhex = tapscript.Tx.encode(txdata).hex;
-                // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_BOOLAND tapleaf, but you cannot spend with it, meaning its calculations were done correctly` );
-                pushBTCpmt(to_challenge_txhex, "");
-                setTimeout(() => { pushBTCpmt(txhex, "") }, 3000);
-                $('.wait_for_sigs_div').innerHTML = `<h1>You're in luck!</h1><p>Whoa, Paul broke his promise! That means you got to take his money. Cool! BTW your transaction doing so has already been broadcasted. At any moment, your money should show up in the address you designated.</p>`;
+                return await handleBrokenPromise(i_can_spend, item[0], challenge_scripts[index]);
             }
         }
         if (item[0] == "OP_XOR" && item.length == 4) {
             var i_can_spend = await OP_XOR(item[1], challenge_scripts[index][2], Number(challenge_scripts[index][4].substring(challenge_scripts[index][4].length - 1)), item[2], challenge_scripts[index][7], Number(challenge_scripts[index][9].substring(challenge_scripts[index][9].length - 1)), item[3], challenge_scripts[index][13], Number(challenge_scripts[index][15].substring(challenge_scripts[index][15].length - 1)));
             if (i_can_spend.startsWith("you can spend")) {
-                if (paul_lied) continue;
-                paul_lied = true;
-                var tree = challenge_scripts.map(s => tapscript.Tap.encodeScript(s));
-                var selected_script = challenge_scripts[index];
-                var target = tapscript.Tap.encodeScript(selected_script);
-                var pubkey = "ab".repeat(32);
-                var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target });
-                var split_string = i_can_spend.split(" ");
-                //the order they should go in is: output first, so it can be moved to the altstack;
-                //then input 1, as it is processed first; then input 2, as it is processed next.
-                var preimages = [split_string[12], split_string[6], split_string[17]];
-                var destino = $('.vickys_bitcoin_address').value;
-                if (!destino) destino = prompt(`Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go`);
-                var txdata = tapscript.Tx.create({
-                    vin: [{
-                        txid: to_challenge_txid,
-                        vout: to_challenge_vout,
-                        prevout: {
-                            value: to_challenge_amt,
-                            scriptPubKey: ['OP_1', tpubkey]
-                        },
-                    }],
-                    vout: [{
-                        value: to_challenge_amt - 500,
-                        scriptPubKey: tapscript.Address.toScriptPubKey(destino),
-                    }]
-                });
-                var sig = tapscript.Signer.taproot.sign(privkey, txdata, 0, { extension: target });
-                txdata.vin[0].witness = [sig, ...preimages, challenge_scripts[index], cblock];
-                var txhex = tapscript.Tx.encode(txdata).hex;
-                // alert( i_can_spend + ` -- oh yeah and the index of the tapleaf you can spend with is ${index}\n\n${to_challenge_txhex}\n\n${txhex}` );} else {console.log( `you have the preimages for tapleaf ${index}, which was an OP_XOR tapleaf, but I cannot spend with it, meaning its calculations were done correctly` );
-                pushBTCpmt(to_challenge_txhex, "");
-                setTimeout(() => { pushBTCpmt(txhex, "") }, 3000);
-                $('.wait_for_sigs_div').innerHTML = `<h1>You're in luck!</h1><p>Whoa, Paul broke his promise! That means you got to take his money. Cool! BTW your transaction doing so has already been broadcasted. At any moment, your money should show up in the address you designated.</p>`;
+                return await handleBrokenPromise(i_can_spend, item[0], challenge_scripts[index]);
             }
         }
     }
     await logInputs();
-    var index; for (index = 0; index < arr.length; index++) {
-        var gate = arr[index].split(" ").filter(item => item);
-        if (gate[gate.length - 1] == "INV") {
-            wires[gate[3]] = eval(`INV( wires[ ${gate[2]} ] )`);
-            //js_version += `wires[ ${gate[ 3 ]} ] = INV( wires[ ${gate[ 2 ]} ] )\n`;
-        }
-        if (gate[gate.length - 1] == "AND") {
-            wires[gate[4]] = eval(`AND( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`);
-            //js_version += `wires[ ${gate[ 4 ]} ] = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )\n`;
-        }
-        if (gate[gate.length - 1] == "XOR") {
-            wires[gate[4]] = eval(`XOR( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`);
-            //js_version += `wires[ ${gate[ 4 ]} ] = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )\n`;
-        }
-    }
-    var input_1 = ``;
-    var input_2 = ``;
-    var output = ``;
-    var i; for (i = 0; i < number_of_inputs; i++) {
-        input_1 += String(wires[i]);
-    }
-    if (number_of_inputs_2) {
-        var i; for (i = 0; i < number_of_inputs_2; i++) {
-            input_2 += String(wires[i + number_of_inputs]);
-        }
-    }
-    var i; for (i = number_of_preimages_to_expect - number_of_outputs; i < number_of_preimages_to_expect; i++) {
-        output += String(wires[i]);
-    }
-    console.log("inputs and outputs:", input_1, input_2, output);
-    if (paul_lied) return;
+
     if (program == "zero checker") {
         var is_or_is_not = "is";
         if (!Number(output)) is_or_is_not = "is not";

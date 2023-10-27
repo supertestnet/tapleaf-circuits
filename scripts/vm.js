@@ -1118,6 +1118,37 @@ var logInputs = async () => {
         }
     }
     //console.log( input_prep );
+
+    var index; for (index = 0; index < arr.length; index++) {
+        var gate = arr[index].split(" ").filter(item => item);
+        if (gate[gate.length - 1] == "INV") {
+            wires[gate[3]] = eval(`INV( wires[ ${gate[2]} ] )`);
+            //js_version += `wires[ ${gate[ 3 ]} ] = INV( wires[ ${gate[ 2 ]} ] )\n`;
+        }
+        if (gate[gate.length - 1] == "AND") {
+            wires[gate[4]] = eval(`AND( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`);
+            //js_version += `wires[ ${gate[ 4 ]} ] = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )\n`;
+        }
+        if (gate[gate.length - 1] == "XOR") {
+            wires[gate[4]] = eval(`XOR( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`);
+            //js_version += `wires[ ${gate[ 4 ]} ] = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )\n`;
+        }
+    }
+    var input_1 = ``;
+    var input_2 = ``;
+    var output = ``;
+    var i; for (i = 0; i < number_of_inputs; i++) {
+        input_1 += String(wires[i]);
+    }
+    if (number_of_inputs_2) {
+        var i; for (i = 0; i < number_of_inputs_2; i++) {
+            input_2 += String(wires[i + number_of_inputs]);
+        }
+    }
+    var i; for (i = number_of_preimages_to_expect - number_of_outputs; i < number_of_preimages_to_expect; i++) {
+        output += String(wires[i]);
+    }
+    console.log("inputs and outputs:", input_1, input_2, output);
 }
 
 var findHashesInCopy = (hash1, hash2) => {
