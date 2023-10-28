@@ -84,7 +84,7 @@ var makeBristolArray = (arrprep) => {
     arr.splice(0, 4);
 }
 
-setOperationsArray = async () => {
+setOperationsArray = async (isVerifier) => {
     var index; for (index = 0; index < arr.length; index++) {
         var gate = arr[index].split(" ").filter(item => item);
         if (gate[gate.length - 1] == "INV") {
@@ -96,120 +96,61 @@ setOperationsArray = async () => {
                 var input_preimage_0 = wire_settings[gate[2]][0];
                 var input_preimage_1 = wire_settings[gate[2]][1];
             }
-            var output_preimage_0 = getRand(32);
-            var output_preimage_1 = getRand(32);
-            var input_hash_0 = await sha256(hexToBytes(input_preimage_0));
-            var input_hash_1 = await sha256(hexToBytes(input_preimage_1));
+            // Vicky should be able to view the output hashes in her own copies of operations_array and
+            // subsequent_commitment_hashes that she creates. Then she can grab the "right" hashes from
+            // the corresponding indices of the "real" subsequent_commitment_hashes she gets from Paul
+            var input_hash_0 = '';
+            var input_hash_1 = '';
+            if (isVerifier) {
+                var copy_of_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][0]));
+                var copy_of_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][1]));
+                var hash_info = findHashesInCopy(copy_of_input_hash_0, copy_of_input_hash_1);
+                var index_of_input_hashes = hash_info[0];
+                var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+                input_hash_0 = array_to_use[index_of_input_hashes][0];
+                input_hash_1 = array_to_use[index_of_input_hashes][1];
+            } else {
+                input_hash_0 = await sha256(hexToBytes(input_preimage_0));
+                input_hash_1 = await sha256(hexToBytes(input_preimage_1));
+            }
             if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [input_hash_0, input_hash_1];
-            var output_hash_0 = await sha256(hexToBytes(output_preimage_0));
-            var output_hash_1 = await sha256(hexToBytes(output_preimage_1));
-            wire_settings[gate[3]] = [output_preimage_0, output_preimage_1];
-            wire_hashes[gate[3]] = [output_hash_0, output_hash_1];
-            operations_array.push(["INV", ["input_preimages", input_preimage_0, input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["input_hashes", input_hash_0, input_hash_1], ["output_hashes", output_hash_0, output_hash_1], `var w_${gate[3]} = INV( wires[ ${gate[2]} ] )`]);
-        }
-        if (gate[gate.length - 1] == "AND") {
-            if (!wire_settings[gate[2]]) {
-                var first_input_preimage_0 = getRand(32);
-                var first_input_preimage_1 = getRand(32);
-                wire_settings[gate[2]] = [first_input_preimage_0, first_input_preimage_1];
-            } else {
-                var first_input_preimage_0 = wire_settings[gate[2]][0];
-                var first_input_preimage_1 = wire_settings[gate[2]][1];
-            }
-            if (!wire_settings[gate[3]]) {
-                var second_input_preimage_0 = getRand(32);
-                var second_input_preimage_1 = getRand(32);
-                wire_settings[gate[3]] = [second_input_preimage_0, second_input_preimage_1];
-            } else {
-                var second_input_preimage_0 = wire_settings[gate[3]][0];
-                var second_input_preimage_1 = wire_settings[gate[3]][1];
-            }
-            var output_preimage_0 = getRand(32);
-            var output_preimage_1 = getRand(32);
-            var first_input_hash_0 = await sha256(hexToBytes(first_input_preimage_0));
-            var first_input_hash_1 = await sha256(hexToBytes(first_input_preimage_1));
-            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [first_input_hash_0, first_input_hash_1];
-            var second_input_hash_0 = await sha256(hexToBytes(second_input_preimage_0));
-            var second_input_hash_1 = await sha256(hexToBytes(second_input_preimage_1));
-            if (!wire_hashes[gate[3]]) wire_hashes[gate[3]] = [second_input_hash_0, second_input_hash_1];
-            var output_hash_0 = await sha256(hexToBytes(output_preimage_0));
-            var output_hash_1 = await sha256(hexToBytes(output_preimage_1));
-            wire_settings[gate[4]] = [output_preimage_0, output_preimage_1];
-            wire_hashes[gate[4]] = [output_hash_0, output_hash_1];
-            operations_array.push(["AND", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", output_hash_0, output_hash_1], `var w_${gate[4]} = AND( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`]);
-        }
-        if (gate[gate.length - 1] == "XOR") {
-            if (!wire_settings[gate[2]]) {
-                var first_input_preimage_0 = getRand(32);
-                var first_input_preimage_1 = getRand(32);
-                wire_settings[gate[2]] = [first_input_preimage_0, first_input_preimage_1];
-            } else {
-                var first_input_preimage_0 = wire_settings[gate[2]][0];
-                var first_input_preimage_1 = wire_settings[gate[2]][1];
-            }
-            if (!wire_settings[gate[3]]) {
-                var second_input_preimage_0 = getRand(32);
-                var second_input_preimage_1 = getRand(32);
-                wire_settings[gate[3]] = [second_input_preimage_0, second_input_preimage_1];
-            } else {
-                var second_input_preimage_0 = wire_settings[gate[3]][0];
-                var second_input_preimage_1 = wire_settings[gate[3]][1];
-            }
-            var output_preimage_0 = getRand(32);
-            var output_preimage_1 = getRand(32);
-            var first_input_hash_0 = await sha256(hexToBytes(first_input_preimage_0));
-            var first_input_hash_1 = await sha256(hexToBytes(first_input_preimage_1));
-            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [first_input_hash_0, first_input_hash_1];
-            var second_input_hash_0 = await sha256(hexToBytes(second_input_preimage_0));
-            var second_input_hash_1 = await sha256(hexToBytes(second_input_preimage_1));
-            if (!wire_hashes[gate[3]]) wire_hashes[gate[3]] = [second_input_hash_0, second_input_hash_1];
-            var output_hash_0 = await sha256(hexToBytes(output_preimage_0));
-            var output_hash_1 = await sha256(hexToBytes(output_preimage_1));
-            wire_settings[gate[4]] = [output_preimage_0, output_preimage_1];
-            wire_hashes[gate[4]] = [output_hash_0, output_hash_1];
-            operations_array.push(["XOR", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", output_hash_0, output_hash_1], `var w_${gate[4]} = XOR( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`]);
-        }
-    }
-}
 
-setOperationsArrayVerifier = async () => {
-    var index; for (index = 0; index < arr.length; index++) {
-        var gate = arr[index].split(" ").filter(item => item);
-        if (gate[gate.length - 1] == "INV") {
-            if (!wire_settings[gate[2]]) {
-                var input_preimage_0 = getRand(32);
-                var input_preimage_1 = getRand(32);
-                wire_settings[gate[2]] = [input_preimage_0, input_preimage_1];
+            var output_preimage_0 = '';
+            var output_preimage_1 = '';
+            if (isVerifier) {
+                output_preimage_0 = copy_of_wire_settings[gate[3]][0];
+                output_preimage_1 = copy_of_wire_settings[gate[3]][1];
             } else {
-                var input_preimage_0 = wire_settings[gate[2]][0];
-                var input_preimage_1 = wire_settings[gate[2]][1];
+                output_preimage_0 = getRand(32);
+                output_preimage_1 = getRand(32);
             }
-            var output_preimage_0 = copy_of_wire_settings[gate[3]][0];
-            var output_preimage_1 = copy_of_wire_settings[gate[3]][1];
-            var copy_of_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][0]));
-            var copy_of_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][1]));
-            var hash_info = findHashesInCopy(copy_of_input_hash_0, copy_of_input_hash_1);
-            var index_of_input_hashes = hash_info[0];
-            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-            var input_hash_0 = array_to_use[index_of_input_hashes][0];
-            var input_hash_1 = array_to_use[index_of_input_hashes][1];
-            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [input_hash_0, input_hash_1];
-            var hash_info_test = JSON.parse(JSON.stringify(hash_info));
-            //Vicky should be able to view the output hashes in her own copies of operations_array and
-            //subsequent_commitment_hashes that she creates. Then she can grab the "right" hashes from
-            //the corresponding indices of the "real" subsequent_commitment_hashes she gets from Paul
-            var copy_of_output_hash_0 = await sha256(hexToBytes(output_preimage_0));
-            var copy_of_output_hash_1 = await sha256(hexToBytes(output_preimage_1));
-            var hash_info = findHashesInCopy(copy_of_output_hash_0, copy_of_output_hash_1);
-            var index_of_output_hashes = hash_info[0];
-            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-            var real_output_hash_0 = array_to_use[index_of_output_hashes][0];
-            var real_output_hash_1 = array_to_use[index_of_output_hashes][1];
             wire_settings[gate[3]] = [output_preimage_0, output_preimage_1];
-            wire_hashes[gate[3]] = [real_output_hash_0, real_output_hash_1];
-            operations_array.push(["INV", ["input_preimages", input_preimage_0, input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["input_hashes", input_hash_0, input_hash_1], ["output_hashes", real_output_hash_0, real_output_hash_1], `var w_${gate[3]} = INV( wires[ ${gate[2]} ] )`]);
+
+            var output_hash_0 = '';
+            var output_hash_1 = '';
+            if (isVerifier) {
+                var copy_of_output_hash_0 = await sha256(hexToBytes(output_preimage_0));
+                var copy_of_output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+                var hash_info = findHashesInCopy(copy_of_output_hash_0, copy_of_output_hash_1);
+                var index_of_output_hashes = hash_info[0];
+                var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+                output_hash_0 = array_to_use[index_of_output_hashes][0];
+                output_hash_1 = array_to_use[index_of_output_hashes][1];
+            } else {
+                output_hash_0 = await sha256(hexToBytes(output_preimage_0));
+                output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+            }
+            wire_hashes[gate[3]] = [output_hash_0, output_hash_1];
+            operations_array.push([
+                "INV",
+                ["input_preimages", input_preimage_0, input_preimage_1],
+                ["output_preimages", output_preimage_0, output_preimage_1],
+                ["input_hashes", input_hash_0, input_hash_1],
+                ["output_hashes", output_hash_0, output_hash_1],
+                `var w_${gate[3]} = INV( wires[ ${gate[2]} ] )`
+            ]);
         }
-        if (gate[gate.length - 1] == "AND") {
+        if (gate[gate.length - 1] == "AND" || gate[gate.length - 1] == "XOR") {
             if (!wire_settings[gate[2]]) {
                 var first_input_preimage_0 = getRand(32);
                 var first_input_preimage_1 = getRand(32);
@@ -218,6 +159,22 @@ setOperationsArrayVerifier = async () => {
                 var first_input_preimage_0 = wire_settings[gate[2]][0];
                 var first_input_preimage_1 = wire_settings[gate[2]][1];
             }
+            var first_input_hash_0 = '';
+            var first_input_hash_1 = '';
+            if (isVerifier) {
+                var copy_of_first_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][0]));
+                var copy_of_first_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][1]));
+                var hash_info = findHashesInCopy(copy_of_first_input_hash_0, copy_of_first_input_hash_1);
+                var index_of_first_input_hashes = hash_info[0];
+                var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+                first_input_hash_0 = array_to_use[index_of_first_input_hashes][0];
+                first_input_hash_1 = array_to_use[index_of_first_input_hashes][1];
+            } else {
+                first_input_hash_0 = await sha256(hexToBytes(first_input_preimage_0));
+                first_input_hash_1 = await sha256(hexToBytes(first_input_preimage_1));
+            }
+            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [first_input_hash_0, first_input_hash_1];
+
             if (!wire_settings[gate[3]]) {
                 var second_input_preimage_0 = getRand(32);
                 var second_input_preimage_1 = getRand(32);
@@ -226,80 +183,58 @@ setOperationsArrayVerifier = async () => {
                 var second_input_preimage_0 = wire_settings[gate[3]][0];
                 var second_input_preimage_1 = wire_settings[gate[3]][1];
             }
-            var output_preimage_0 = copy_of_wire_settings[gate[4]][0];
-            var output_preimage_1 = copy_of_wire_settings[gate[4]][1];
-            var copy_of_first_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][0]));
-            var copy_of_first_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][1]));
-            var hash_info = findHashesInCopy(copy_of_first_input_hash_0, copy_of_first_input_hash_1);
-            var index_of_first_input_hashes = hash_info[0];
-            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-            var first_input_hash_0 = array_to_use[index_of_first_input_hashes][0];
-            var first_input_hash_1 = array_to_use[index_of_first_input_hashes][1];
-            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [first_input_hash_0, first_input_hash_1];
-            var copy_of_second_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][0]));
-            var copy_of_second_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][1]));
-            var hash_info = findHashesInCopy(copy_of_second_input_hash_0, copy_of_second_input_hash_1);
-            var index_of_second_input_hashes = hash_info[0];
-            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-            var second_input_hash_0 = array_to_use[index_of_second_input_hashes][0];
-            var second_input_hash_1 = array_to_use[index_of_second_input_hashes][1];
-            if (!wire_hashes[gate[3]]) wire_hashes[gate[3]] = [second_input_hash_0, second_input_hash_1];
-            var copy_of_output_hash_0 = await sha256(hexToBytes(output_preimage_0));
-            var copy_of_output_hash_1 = await sha256(hexToBytes(output_preimage_1));
-            var hash_info = findHashesInCopy(copy_of_output_hash_0, copy_of_output_hash_1);
-            var index_of_output_hashes = hash_info[0];
-            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-            var real_output_hash_0 = array_to_use[index_of_output_hashes][0];
-            var real_output_hash_1 = array_to_use[index_of_output_hashes][1];
-            wire_settings[gate[4]] = [output_preimage_0, output_preimage_1];
-            wire_hashes[gate[4]] = [real_output_hash_0, real_output_hash_1];
-            operations_array.push(["AND", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", real_output_hash_0, real_output_hash_1], `var w_${gate[4]} = AND( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`]);
-        }
-        if (gate[gate.length - 1] == "XOR") {
-            if (!wire_settings[gate[2]]) {
-                var first_input_preimage_0 = getRand(32);
-                var first_input_preimage_1 = getRand(32);
-                wire_settings[gate[2]] = [first_input_preimage_0, first_input_preimage_1];
+            var second_input_hash_0 = '';
+            var second_input_hash_1 = '';
+            if (isVerifier) {
+                var copy_of_second_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][0]));
+                var copy_of_second_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][1]));
+                var hash_info = findHashesInCopy(copy_of_second_input_hash_0, copy_of_second_input_hash_1);
+                var index_of_second_input_hashes = hash_info[0];
+                var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+                second_input_hash_0 = array_to_use[index_of_second_input_hashes][0];
+                second_input_hash_1 = array_to_use[index_of_second_input_hashes][1];
             } else {
-                var first_input_preimage_0 = wire_settings[gate[2]][0];
-                var first_input_preimage_1 = wire_settings[gate[2]][1];
+                second_input_hash_0 = await sha256(hexToBytes(second_input_preimage_0));
+                second_input_hash_1 = await sha256(hexToBytes(second_input_preimage_1));
             }
-            if (!wire_settings[gate[3]]) {
-                var second_input_preimage_0 = getRand(32);
-                var second_input_preimage_1 = getRand(32);
-                wire_settings[gate[3]] = [second_input_preimage_0, second_input_preimage_1];
-            } else {
-                var second_input_preimage_0 = wire_settings[gate[3]][0];
-                var second_input_preimage_1 = wire_settings[gate[3]][1];
-            }
-            var output_preimage_0 = copy_of_wire_settings[gate[4]][0];
-            var output_preimage_1 = copy_of_wire_settings[gate[4]][1];
-            var copy_of_first_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][0]));
-            var copy_of_first_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][1]));
-            var hash_info = findHashesInCopy(copy_of_first_input_hash_0, copy_of_first_input_hash_1);
-            var index_of_first_input_hashes = hash_info[0];
-            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-            var first_input_hash_0 = array_to_use[index_of_first_input_hashes][0];
-            var first_input_hash_1 = array_to_use[index_of_first_input_hashes][1];
-            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [first_input_hash_0, first_input_hash_1];
-            var copy_of_second_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][0]));
-            var copy_of_second_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][1]));
-            var hash_info = findHashesInCopy(copy_of_second_input_hash_0, copy_of_second_input_hash_1);
-            var index_of_second_input_hashes = hash_info[0];
-            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-            var second_input_hash_0 = array_to_use[index_of_second_input_hashes][0];
-            var second_input_hash_1 = array_to_use[index_of_second_input_hashes][1];
             if (!wire_hashes[gate[3]]) wire_hashes[gate[3]] = [second_input_hash_0, second_input_hash_1];
-            var copy_of_output_hash_0 = await sha256(hexToBytes(output_preimage_0));
-            var copy_of_output_hash_1 = await sha256(hexToBytes(output_preimage_1));
-            var hash_info = findHashesInCopy(copy_of_output_hash_0, copy_of_output_hash_1);
-            var index_of_output_hashes = hash_info[0];
-            var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-            var real_output_hash_0 = array_to_use[index_of_output_hashes][0];
-            var real_output_hash_1 = array_to_use[index_of_output_hashes][1];
+
+            var output_preimage_0 = '';
+            var output_preimage_1 = '';
+            if (isVerifier) {
+                output_preimage_0 = copy_of_wire_settings[gate[4]][0];
+                output_preimage_1 = copy_of_wire_settings[gate[4]][1];
+            } else {
+                output_preimage_0 = getRand(32);
+                output_preimage_1 = getRand(32);
+            }
             wire_settings[gate[4]] = [output_preimage_0, output_preimage_1];
-            wire_hashes[gate[4]] = [real_output_hash_0, real_output_hash_1];
-            operations_array.push(["XOR", ["first_input_preimages", first_input_preimage_0, first_input_preimage_1], ["second_input_preimages", second_input_preimage_0, second_input_preimage_1], ["output_preimages", output_preimage_0, output_preimage_1], ["first_input_hashes", first_input_hash_0, first_input_hash_1], ["second_input_hashes", second_input_hash_0, second_input_hash_1], ["output_hashes", real_output_hash_0, real_output_hash_1], `var w_${gate[4]} = XOR( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`]);
+
+            var output_hash_0 = '';
+            var output_hash_1 = '';
+            if (isVerifier) {
+                var copy_of_output_hash_0 = await sha256(hexToBytes(output_preimage_0));
+                var copy_of_output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+                var hash_info = findHashesInCopy(copy_of_output_hash_0, copy_of_output_hash_1);
+                var index_of_output_hashes = hash_info[0];
+                var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
+                output_hash_0 = array_to_use[index_of_output_hashes][0];
+                output_hash_1 = array_to_use[index_of_output_hashes][1];
+            } else {
+                output_hash_0 = await sha256(hexToBytes(output_preimage_0));
+                output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+            }
+            wire_hashes[gate[4]] = [output_hash_0, output_hash_1];
+            operations_array.push([
+                gate[gate.length - 1],
+                ["first_input_preimages", first_input_preimage_0, first_input_preimage_1],
+                ["second_input_preimages", second_input_preimage_0, second_input_preimage_1],
+                ["output_preimages", output_preimage_0, output_preimage_1],
+                ["first_input_hashes", first_input_hash_0, first_input_hash_1],
+                ["second_input_hashes", second_input_hash_0, second_input_hash_1],
+                ["output_hashes", output_hash_0, output_hash_1],
+                `var w_${gate[4]} = ${gate[gate.length - 1]}( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`
+            ]);
         }
     }
 }

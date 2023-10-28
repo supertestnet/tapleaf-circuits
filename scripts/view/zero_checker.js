@@ -2,7 +2,7 @@ $('.choose_zero_checker').onclick = async () => {
     $('.zero_checker_program').classList.remove("hidden");
     $('.home').classList.add("hidden");
     makeBristolArray(circuit_bristol_zero_checker);
-    await setOperationsArray();
+    await setOperationsArray(false);
     await generateBitCommitments();
     operations_array.forEach((operation, index) => {
         if (operation[0] == "INV") subsequent_commitment_preimages.push([operation[2][1], operation[2][2]]);

@@ -241,7 +241,7 @@ async function handlePromise(json) {
         if (operation[0] == "XOR") copy_of_subsequent_commitment_preimages.push([operation[3][1], operation[3][2]]);
         if (operation[0] == "XOR") copy_of_subsequent_commitment_hashes.push([operation[6][1], operation[6][2]]);
     });
-    await setOperationsArrayVerifier();
+    await setOperationsArray(true);
     //Vicky needs to take json[ "output_preimages" ] and add it to
     //preimages_from_paul, but only if she sees that it actually corresponds
     //to the hashes in the last n wires, n being the number of output wires

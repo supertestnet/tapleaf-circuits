@@ -2,7 +2,7 @@ $('.choose_addition').onclick = async () => {
     $('.addition_program').classList.remove("hidden");
     $('.home').classList.add("hidden");
     makeBristolArray(circuit_bristol_addition);
-    await setOperationsArray();
+    await setOperationsArray(false);
     await generateBitCommitments();
     operations_array.forEach((operation, index) => {
         if (operation[0] == "INV") subsequent_commitment_preimages.push([operation[2][1], operation[2][2]]);
