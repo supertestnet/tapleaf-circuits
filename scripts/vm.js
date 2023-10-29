@@ -102,13 +102,9 @@ setOperationsArray = async (isVerifier) => {
             var input_hash_0 = '';
             var input_hash_1 = '';
             if (isVerifier) {
-                var copy_of_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][0]));
-                var copy_of_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][1]));
-                var hash_info = findHashesInCopy(copy_of_input_hash_0, copy_of_input_hash_1);
-                var index_of_input_hashes = hash_info[0];
-                var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-                input_hash_0 = array_to_use[index_of_input_hashes][0];
-                input_hash_1 = array_to_use[index_of_input_hashes][1];
+                var original_hashes = await getOriginalHashesUsingCopyIndex(copy_of_wire_settings[gate[2]][0], copy_of_wire_settings[gate[2]][1]);
+                input_hash_0 = original_hashes.hash_0;
+                input_hash_1 = original_hashes.hash_1;
             } else {
                 input_hash_0 = await sha256(hexToBytes(input_preimage_0));
                 input_hash_1 = await sha256(hexToBytes(input_preimage_1));
@@ -129,13 +125,9 @@ setOperationsArray = async (isVerifier) => {
             var output_hash_0 = '';
             var output_hash_1 = '';
             if (isVerifier) {
-                var copy_of_output_hash_0 = await sha256(hexToBytes(output_preimage_0));
-                var copy_of_output_hash_1 = await sha256(hexToBytes(output_preimage_1));
-                var hash_info = findHashesInCopy(copy_of_output_hash_0, copy_of_output_hash_1);
-                var index_of_output_hashes = hash_info[0];
-                var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-                output_hash_0 = array_to_use[index_of_output_hashes][0];
-                output_hash_1 = array_to_use[index_of_output_hashes][1];
+                var original_hashes = await getOriginalHashesUsingCopyIndex(output_preimage_0, output_preimage_1);
+                output_hash_0 = original_hashes.hash_0;
+                output_hash_1 = original_hashes.hash_1;
             } else {
                 output_hash_0 = await sha256(hexToBytes(output_preimage_0));
                 output_hash_1 = await sha256(hexToBytes(output_preimage_1));
@@ -162,13 +154,9 @@ setOperationsArray = async (isVerifier) => {
             var first_input_hash_0 = '';
             var first_input_hash_1 = '';
             if (isVerifier) {
-                var copy_of_first_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][0]));
-                var copy_of_first_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[2]][1]));
-                var hash_info = findHashesInCopy(copy_of_first_input_hash_0, copy_of_first_input_hash_1);
-                var index_of_first_input_hashes = hash_info[0];
-                var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-                first_input_hash_0 = array_to_use[index_of_first_input_hashes][0];
-                first_input_hash_1 = array_to_use[index_of_first_input_hashes][1];
+                var original_hashes = await getOriginalHashesUsingCopyIndex(copy_of_wire_settings[gate[2]][0], copy_of_wire_settings[gate[2]][1]);
+                first_input_hash_0 = original_hashes.hash_0;
+                first_input_hash_1 = original_hashes.hash_1;
             } else {
                 first_input_hash_0 = await sha256(hexToBytes(first_input_preimage_0));
                 first_input_hash_1 = await sha256(hexToBytes(first_input_preimage_1));
@@ -186,13 +174,9 @@ setOperationsArray = async (isVerifier) => {
             var second_input_hash_0 = '';
             var second_input_hash_1 = '';
             if (isVerifier) {
-                var copy_of_second_input_hash_0 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][0]));
-                var copy_of_second_input_hash_1 = await sha256(hexToBytes(copy_of_wire_settings[gate[3]][1]));
-                var hash_info = findHashesInCopy(copy_of_second_input_hash_0, copy_of_second_input_hash_1);
-                var index_of_second_input_hashes = hash_info[0];
-                var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-                second_input_hash_0 = array_to_use[index_of_second_input_hashes][0];
-                second_input_hash_1 = array_to_use[index_of_second_input_hashes][1];
+                var original_hashes = await getOriginalHashesUsingCopyIndex(copy_of_wire_settings[gate[3]][0], copy_of_wire_settings[gate[3]][1]);
+                second_input_hash_0 = original_hashes.hash_0;
+                second_input_hash_1 = original_hashes.hash_1;
             } else {
                 second_input_hash_0 = await sha256(hexToBytes(second_input_preimage_0));
                 second_input_hash_1 = await sha256(hexToBytes(second_input_preimage_1));
@@ -213,13 +197,9 @@ setOperationsArray = async (isVerifier) => {
             var output_hash_0 = '';
             var output_hash_1 = '';
             if (isVerifier) {
-                var copy_of_output_hash_0 = await sha256(hexToBytes(output_preimage_0));
-                var copy_of_output_hash_1 = await sha256(hexToBytes(output_preimage_1));
-                var hash_info = findHashesInCopy(copy_of_output_hash_0, copy_of_output_hash_1);
-                var index_of_output_hashes = hash_info[0];
-                var array_to_use = hash_info[1] == "sub" ? subsequent_commitment_hashes : initial_commitment_hashes;
-                output_hash_0 = array_to_use[index_of_output_hashes][0];
-                output_hash_1 = array_to_use[index_of_output_hashes][1];
+                var original_hashes = await getOriginalHashesUsingCopyIndex(output_preimage_0, output_preimage_1);
+                output_hash_0 = original_hashes.hash_0;
+                output_hash_1 = original_hashes.hash_1;
             } else {
                 output_hash_0 = await sha256(hexToBytes(output_preimage_0));
                 output_hash_1 = await sha256(hexToBytes(output_preimage_1));
@@ -1084,14 +1064,20 @@ var getInputsAndOutputFromRevealedPreimages = async () => {
         output += String(wires[i]);
     }
 
-    return {input_1, input_2, output};
+    return { input_1, input_2, output };
 }
 
-var findHashesInCopy = (hash1, hash2) => {
+var getOriginalHashesUsingCopyIndex = async (preimage_0, preimage_1) => {
+    var hash_0 = await sha256(hexToBytes(preimage_0));
+    var hash_1 = await sha256(hexToBytes(preimage_1));
     var i; for (i = 0; i < copy_of_subsequent_commitment_hashes.length; i++) {
-        if (copy_of_subsequent_commitment_hashes[i].includes(hash1) && copy_of_subsequent_commitment_hashes[i].includes(hash2)) return [i, "sub"];
+        if (copy_of_subsequent_commitment_hashes[i].includes(hash_0) && copy_of_subsequent_commitment_hashes[i].includes(hash_1)) {
+            return { hash_0: subsequent_commitment_hashes[i][0], hash_1: subsequent_commitment_hashes[i][1] };
+        }
     }
     var i; for (i = 0; i < copy_of_initial_commitment_hashes.length; i++) {
-        if (copy_of_initial_commitment_hashes[i] && copy_of_initial_commitment_hashes[i].includes(hash1) && copy_of_initial_commitment_hashes[i].includes(hash2)) return [i, "init"];
+        if (copy_of_initial_commitment_hashes[i] && copy_of_initial_commitment_hashes[i].includes(hash_0) && copy_of_initial_commitment_hashes[i].includes(hash_1)) {
+            return { hash_0: initial_commitment_hashes[i][0], hash_1: initial_commitment_hashes[i][1] };
+        }
     }
 }
