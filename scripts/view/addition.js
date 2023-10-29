@@ -4,14 +4,6 @@ $('.choose_addition').onclick = async () => {
     makeBristolArray(circuit_bristol_addition);
     await setOperationsArray(false);
     await generateBitCommitments();
-    operations_array.forEach((operation, index) => {
-        if (operation[0] == "INV") subsequent_commitment_preimages.push([operation[2][1], operation[2][2]]);
-        if (operation[0] == "INV") subsequent_commitment_hashes.push([operation[4][1], operation[4][2]]);
-        if (operation[0] == "AND") subsequent_commitment_preimages.push([operation[3][1], operation[3][2]]);
-        if (operation[0] == "AND") subsequent_commitment_hashes.push([operation[6][1], operation[6][2]]);
-        if (operation[0] == "XOR") subsequent_commitment_preimages.push([operation[3][1], operation[3][2]]);
-        if (operation[0] == "XOR") subsequent_commitment_hashes.push([operation[6][1], operation[6][2]]);
-    });
 }
 $('.addition_step_one_done').onclick = () => {
     $('.addition_step_one').classList.add("hidden");

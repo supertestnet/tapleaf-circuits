@@ -221,6 +221,15 @@ var generateBitCommitments = async () => {
         var hash_1 = await sha256(hexToBytes(preimage_1));
         initial_commitment_hashes.push([hash_0, hash_1]);
     }
+
+    operations_array.forEach((operation, index) => {
+        if (operation[0] == "INV") subsequent_commitment_preimages.push([operation[2][1], operation[2][2]]);
+        if (operation[0] == "INV") subsequent_commitment_hashes.push([operation[4][1], operation[4][2]]);
+        if (operation[0] == "AND") subsequent_commitment_preimages.push([operation[3][1], operation[3][2]]);
+        if (operation[0] == "AND") subsequent_commitment_hashes.push([operation[6][1], operation[6][2]]);
+        if (operation[0] == "XOR") subsequent_commitment_preimages.push([operation[3][1], operation[3][2]]);
+        if (operation[0] == "XOR") subsequent_commitment_hashes.push([operation[6][1], operation[6][2]]);
+    });
 }
 
 function saveData(data, fileName) {
