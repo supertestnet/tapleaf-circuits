@@ -73,12 +73,6 @@ var number_of_numbers_being_passed_as_input = null;
 //e.g. if the second line is 2 64 32 then the following line would be 32 and it means
 //how many bits are in the second number passed to the function as input
 var number_of_inputs_2 = null;
-var copy_of_wire_settings = {}
-var copy_of_operations_array = [];
-var copy_of_initial_commitment_preimages = [];
-var copy_of_initial_commitment_hashes = [];
-var copy_of_subsequent_commitment_preimages = [];
-var copy_of_subsequent_commitment_hashes = [];
 var pauls_key = null;
 var funding_scripts = null;
 var funding_tpubkey = null;
@@ -90,3 +84,4 @@ var to_challenge_vout = null;
 var to_challenge_amt = null;
 var program = null;
 var pauls_promise = null;
+var map_wire_to_commitment_index = [];

@@ -232,15 +232,7 @@ async function handlePromise(json) {
     if (program == "addition") {
         makeBristolArray(circuit_bristol_addition);
     }
-    await copyOfSetOperationsArray();
-    copy_of_operations_array.forEach((operation, index) => {
-        if (operation[0] == "INV") copy_of_subsequent_commitment_preimages.push([operation[2][1], operation[2][2]]);
-        if (operation[0] == "INV") copy_of_subsequent_commitment_hashes.push([operation[4][1], operation[4][2]]);
-        if (operation[0] == "AND") copy_of_subsequent_commitment_preimages.push([operation[3][1], operation[3][2]]);
-        if (operation[0] == "AND") copy_of_subsequent_commitment_hashes.push([operation[6][1], operation[6][2]]);
-        if (operation[0] == "XOR") copy_of_subsequent_commitment_preimages.push([operation[3][1], operation[3][2]]);
-        if (operation[0] == "XOR") copy_of_subsequent_commitment_hashes.push([operation[6][1], operation[6][2]]);
-    });
+    mapWireNumberToCommitmentIndex();
     await setOperationsArray(true);
     //Vicky needs to take json[ "output_preimages" ] and add it to
     //preimages_from_paul, but only if she sees that it actually corresponds
