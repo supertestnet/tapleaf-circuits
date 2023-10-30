@@ -1,7 +1,7 @@
 $('.choose_addition').onclick = async () => {
     $('.addition_program').classList.remove("hidden");
     $('.home').classList.add("hidden");
-    makeBristolArray(circuit_bristol_addition);
+    parseBristolString(circuit_bristol_addition);
     await setOperationsArray(false);
     await generateBitCommitments();
 }

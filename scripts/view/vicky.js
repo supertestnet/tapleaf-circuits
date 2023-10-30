@@ -224,13 +224,13 @@ async function handlePromise(json) {
     anti_contradiction_address = generateAntiContradictionAddress(pauls_key, pubkey);
     funding_address = generateFundingAddress(pauls_key, pubkey);
     if (program == "zero checker") {
-        makeBristolArray(circuit_bristol_zero_checker);
+        parseBristolString(circuit_bristol_zero_checker);
     }
     if (program == "size checker") {
-        makeBristolArray(circuit_bristol_size_checker);
+        parseBristolString(circuit_bristol_size_checker);
     }
     if (program == "addition") {
-        makeBristolArray(circuit_bristol_addition);
+        parseBristolString(circuit_bristol_addition);
     }
     mapWireNumberToCommitmentIndex();
     await setOperationsArray(true);

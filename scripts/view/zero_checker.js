@@ -1,7 +1,7 @@
 $('.choose_zero_checker').onclick = async () => {
     $('.zero_checker_program').classList.remove("hidden");
     $('.home').classList.add("hidden");
-    makeBristolArray(circuit_bristol_zero_checker);
+    parseBristolString(circuit_bristol_zero_checker);
     await setOperationsArray(false);
     await generateBitCommitments();
 }

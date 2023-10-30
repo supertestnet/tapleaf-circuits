@@ -62,31 +62,9 @@ var OP_XOR = async (first_input_preimage, first_expected_input_hash, first_input
     return `you cannot spend with this tapleaf`;
 }
 
-var makeBristolArray = (arrprep) => {
-    arr = arrprep.split(`\n`);
-    arr.forEach((entry, index) => {
-        arr[index] = arr[index].replace(/ +(?= )/g, "");
-        if (entry.startsWith(" ")) arr[index] = arr[index].substring(1);
-    });
-    if (!arr[0]) arr.splice(0, 1);
-    if (!arr[arr.length - 1]) arr.splice(arr.length - 1, 1);
-    if (arr[3]) alert("Oops, you entered an invalid bristol circuit! Try again with the whole document, including the first three lines that define the number of gates, number of input bits, and number of output bits.");
-    number_of_preimages_to_expect = arr[0].split(" ").filter(item => item)[1];
-    number_of_preimages_to_expect = Number(number_of_preimages_to_expect);
-    number_of_numbers_being_passed_as_input = arr[1].split(" ").filter(item => item)[0];
-    number_of_numbers_being_passed_as_input = Number(number_of_numbers_being_passed_as_input);
-    number_of_inputs = arr[1].split(" ").filter(item => item)[1];
-    number_of_inputs = Number(number_of_inputs);
-    if (arr[1].split(" ").filter(item => item)[2]) number_of_inputs_2 = arr[1].split(" ").filter(item => item)[2];
-    if (number_of_inputs_2) number_of_inputs_2 = Number(number_of_inputs_2);
-    number_of_outputs = arr[2].split(" ").filter(item => item)[1];
-    number_of_outputs = Number(number_of_outputs);
-    arr.splice(0, 4);
-}
-
 setOperationsArray = async (isVerifier) => {
-    var index; for (index = 0; index < arr.length; index++) {
-        var gate = arr[index].split(" ").filter(item => item);
+    var index; for (index = 0; index < circuit.length; index++) {
+        var gate = circuit[index].split(" ").filter(item => item);
         if (gate[gate.length - 1] == "INV") {
             if (!wire_settings[gate[2]]) {
                 var input_preimage_0 = getRand(32);
@@ -201,8 +179,8 @@ setOperationsArray = async (isVerifier) => {
 }
 
 function mapWireNumberToCommitmentIndex() {
-    var index; for (index = 0; index < arr.length; index++) {
-        var gate = arr[index].split(" ").filter(item => item);
+    var index; for (index = 0; index < circuit.length; index++) {
+        var gate = circuit[index].split(" ").filter(item => item);
         if (gate[gate.length - 1] == "INV") {
             map_wire_to_commitment_index.push(gate[3]);
         }
@@ -951,8 +929,8 @@ var getInputsAndOutputFromRevealedPreimages = async () => {
     }
     //console.log( input_prep );
 
-    var index; for (index = 0; index < arr.length; index++) {
-        var gate = arr[index].split(" ").filter(item => item);
+    var index; for (index = 0; index < circuit.length; index++) {
+        var gate = circuit[index].split(" ").filter(item => item);
         if (gate[gate.length - 1] == "INV") {
             wires[gate[3]] = eval(`INV( wires[ ${gate[2]} ] )`);
             //js_version += `wires[ ${gate[ 3 ]} ] = INV( wires[ ${gate[ 2 ]} ] )\n`;
