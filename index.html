@@ -1,273 +1,320 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, user-scalable=no">
-        <link rel="stylesheet" type="text/css" href="styles.css">
-        <script src="https://bundle.run/noble-secp256k1@1.2.14"></script>
-        <script src="https://unpkg.com/@cmdcode/tapscript@1.4.1"></script>
-        <script src="scripts/utils.js"></script>
-        <script src="scripts/network.js"></script>
-        <script src="scripts/vm.js"></script>
-        <script src="scripts/circuits/bristol_zero_checker.js"></script>
-        <script src="scripts/circuits/bristol_size_checker.js"></script>
-        <script src="scripts/circuits/bristol_addition.js"></script>
-        <script src="scripts/init.js"></script>
-    </head>
-    <body>
-        <div class="home">
-            <h1>Welcome to BitVM Online</h1>
-            <p>To run the bitvm there are seven steps:</p>
-            <ol>
-                <li>Pick a program</li>
-                <li>Act as the prover to commit to a certain output</li>
-                <li>Send money to the program</li>
-                <li>Act as the prover to share which "inputs" make the code produce the expected output</li>
-                <li>Act as the verifier to check if the code, with those inputs, produces the expected output</li>
-                <li>If it does, act as the prover to take the money after a timelock</li>
-                <li>Otherwise, act as the verifier to take the money by producing the error</li>
-            </ol>
-            <h2>Pick a program you want to run</h2>
-            <p><button class="view_zero_checker p_buttons">Zero checker</button> <button class="view_size_checker p_buttons">Size checker</button> <button class="view_addition p_buttons">Addition</button></p>
-            <div class="zero_checker hidden">
-                <h3 class="zero_checker_label">
-                    Zero checker
-                </h3>
-                <div class="zero_checker_instructions">
-                    In this program, the prover must share a string of numbers with the verifier within a time limit, but not before making one of two promises: the string will only be 0s, or the string will *not* only be zeros. The verifier can take the prover's money if the promise is broken.
-                </div>
-                <p><button class="choose_zero_checker">Choose this program</button></p>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="styles.css">
+    <script src="https://bundle.run/noble-secp256k1@1.2.14"></script>
+    <script src="https://unpkg.com/@cmdcode/tapscript@1.4.1"></script>
+    <script src="scripts/utils.js"></script>
+    <script src="scripts/network.js"></script>
+    <script src="scripts/vm.js"></script>
+    <script src="scripts/circuits/bristol_zero_checker.js"></script>
+    <script src="scripts/circuits/bristol_size_checker.js"></script>
+    <script src="scripts/circuits/bristol_addition.js"></script>
+    <script src="scripts/init.js"></script>
+</head>
+
+<body>
+    <div class="home">
+        <h1>Welcome to BitVM Online</h1>
+        <p>To run the bitvm there are seven steps:</p>
+        <ol>
+            <li>Pick a program</li>
+            <li>Act as the prover to commit to a certain output</li>
+            <li>Send money to the program</li>
+            <li>Act as the prover to share which "inputs" make the code produce the expected output</li>
+            <li>Act as the verifier to check if the code, with those inputs, produces the expected output</li>
+            <li>If it does, act as the prover to take the money after a timelock</li>
+            <li>Otherwise, act as the verifier to take the money by producing the error</li>
+        </ol>
+        <h2>Pick a program you want to run</h2>
+        <p><button class="view_zero_checker p_buttons">Zero checker</button> <button
+                class="view_size_checker p_buttons">Size checker</button> <button
+                class="view_addition p_buttons">Addition</button></p>
+        <div class="zero_checker hidden">
+            <h3 class="zero_checker_label">
+                Zero checker
+            </h3>
+            <div class="zero_checker_instructions">
+                In this program, the prover must share a string of numbers with the verifier within a time limit, but
+                not before making one of two promises: the string will only be 0s, or the string will *not* only be
+                zeros. The verifier can take the prover's money if the promise is broken.
             </div>
-            <div class="size_checker hidden">
-                <h3 class="size_checker_label">
-                    Size checker
-                </h3>
-                <div class="size_checker_instructions">
-                    In this program, the prover must share two numbers with the verifier within a time limit, but not before making one of two promises: (1) the first number will be bigger than the second number, or (2) the first number will not be bigger than the second number. The verifier can take the prover's money if the promise is broken.
-                </div>
-                <p><button class="choose_size_checker">Choose this program</button></p>
-            </div>
-            <div class="addition hidden">
-                <h3 class="addition_label">
-                    Addition
-                </h3>
-                <div class="addition_instructions">
-                    In this program, the prover must share a number with the verifier, then make a promise: within a time limit, they will share two numbers that sum to the original number. The verifier can take the prover's money if the promise is broken.
-                </div>
-                <p><button class="choose_addition">Choose this program</button></p>
-            </div>
-            <hr>
-            <p><button class="view_caveats">View caveats</button></p>
-            <ol class="caveats hidden">
-                <li>This is a toy implementation, don't expect much.</li>
-                <li>I wrote the VM in about 200 lines of javascript which means it barely works.</li>
-                <li>It breaks if you put a program with more than about 3000 logic gates in it. <a href="https://github.com/supertestnet/tapleaf-circuits/" target="_blank">Help me write a better one!</a></li>
-                <li>The whitepaper talks about using "binary search" in a challenge to find the shortest path to prove your counterparty is equivocating. I don't know how to program a binary search so I just didn't. Instead, if you challenge the prover, he has to *prove the entire computation himself, all on chain.* Which is very dumb, and expensive. But I wasn't trying to make it the smart way, I was trying to make it the easy way. Help  me improve it!</li>
-                <li>If Paul doesn't send Vicky the data he promised, she is technically able to take his money after a 10 block timelock, but I didn't automatically give her a transaction for this like I did for Paul. So she's just out of luck til I do that. (Or you can figure out how to write bitcoin transactions manually and do it yourself.)</li>
-                <li>Paul doesn't make Vicky pay him, or even check if her signatures on the presigned transactions are correct. He just yolos his money right into the bitvm address with no checks or balances, so Vicky can easily steal from him by just immediately moving it into the challenge address without presigning the transaction that lets him take it out again. Fixing that is on my todo list. So is having Vicky pay Paul for the computation.</li>
-                <li>There are a bunch of other caveats but whatever, it technically works! I'm really looking forward to testing more functions with this. Bitcoin can run *anything* guys! Let's write some functions for it!</li>
-            </ol>
+            <p><button class="choose_zero_checker">Choose this program</button></p>
         </div>
-        <div class="zero_checker_program program hidden">
-            <h1>Zero checker</h1>
-            <div class="zero_checker_step_one">
-                <p>
-                    In this demo you will play as Paul, the prover. The first step is to open up the page where Vicky -- the verifier -- will verify your program, and copy her public key, and paste it here
-                </p>
-                <p>Visit Vicky's page: <a class="vicky_link" href="./vicky.html" target="_blank">Vicky page</a></p>
-                <script>
-                    $( '.vicky_link' ).href = "./vicky.html";
-                    if ( $_GET[ "network" ] ) $( '.vicky_link' ).href = `./vicky.html?network=${$_GET[ "network" ]}`;
-                </script>
-                <p>Enter Vicky's public key</p>
-                <p><input class="vickys_key"></p>
-                <p><button class="zero_checker_step_one_done">Done</button></p>
+        <div class="size_checker hidden">
+            <h3 class="size_checker_label">
+                Size checker
+            </h3>
+            <div class="size_checker_instructions">
+                In this program, the prover must share two numbers with the verifier within a time limit, but not before
+                making one of two promises: (1) the first number will be bigger than the second number, or (2) the first
+                number will not be bigger than the second number. The verifier can take the prover's money if the
+                promise is broken.
             </div>
-            <div class="zero_checker_step_two hidden">
-                <p>
-                    Time to make a promise to Vicky! Will your string be all 0s or not all zeros?
-                </p>
-                <select class="all_or_none">
-                    <option>All 0s</option>
-                    <option>Not all 0s</option>
-                </select>
-                <p><button class="submit_all_or_none">Download your promise file</button></p>
-                <p>
-                    Click ok when you've sent the promise file to Vicky
-                </p>
-                <p><button class="zero_checker_step_two_done">Done</button></p>
-            </div>
-            <div class="zero_checker_step_three hidden">
-                <p>
-                    Enter the bitcoin address where you want your money to go when you get it back:
-                </p>
-                <p><input class="zero_checker_bitcoin_address"></p>
-                <p>
-                    Also, it's time to validate that you and Vicky generated the same bitcoin addresses. Do all of these match what Vicky got? (Note: don't send any money to them yet)
-                </p>
-                <div class="address_validation">loading...</div>
-                <p><button class="zero_checker_step_three_done">Yes, they match</button> <button class="zero_checker_step_three_reset">No, they don't match</button></p>
-            </div>
-            <div class="zero_checker_step_four hidden">
-                <p>
-                    Also, send *PRECISELY* 10,000 sats to the following address to start the contract (if you send the wrong amount it will not work):
-                </p>
-                <div class="funding_address_in_step_four">loading...</div>
-                <p class="asking_for_txid">Asking for txid and vout in 3 seconds</p>
-            </div>
-            <div class="zero_checker_step_five hidden">
-                <p>
-                    Broadcast the following transaction to finalize the contract:
-                </p>
-                <div class="starter_txhex">loading...</div>
-                <p><button class="zero_checker_step_five_done">Done</button></p>
-            </div>
-            <div class="zero_checker_step_six hidden">
-                <p>
-                    What string do you want to reveal to Vicky? Remember, you promised <span class="step_six_promise_to_vicky"></span> and she can take your money if you lie
-                </p>
-                <p><input class="zero_checker_revelation_string" maxlength="64" oninput="this.value=this.value.replace(/[^0-1]/,'')"></p>
-                <p>Add this many more characters: <span class="zero_checker_chars_left">64</span></p>
-                <p>Note that your string must only contain 0s and 1s</p>
-                <p><button class="zero_checker_step_six_done">Submit</button></p>
-            </div>
+            <p><button class="choose_size_checker">Choose this program</button></p>
         </div>
-        <div class="addition_program program hidden">
-            <h1>Addition</h1>
-            <div class="addition_step_one">
-                <p>
-                    In this demo you will play as Paul, the prover. The first step is to open up the page where Vicky -- the verifier -- will verify your program, and copy her public key, and paste it here
-                </p>
-                <p>Visit Vicky's page: <a class="vicky_link" href="./vicky.html" target="_blank">Vicky page</a></p>
-                <script>
-                    $( '.vicky_link' ).href = "./vicky.html";
-                    if ( $_GET[ "network" ] ) $( '.vicky_link' ).href = `./vicky.html?network=${$_GET[ "network" ]}`;
-                </script>
-                <p>Enter Vicky's public key</p>
-                <p><input class="vickys_key"></p>
-                <p><button class="addition_step_one_done">Done</button></p>
+        <div class="addition hidden">
+            <h3 class="addition_label">
+                Addition
+            </h3>
+            <div class="addition_instructions">
+                In this program, the prover must share a number with the verifier, then make a promise: within a time
+                limit, they will share two numbers that sum to the original number. The verifier can take the prover's
+                money if the promise is broken.
             </div>
-            <div class="addition_step_two hidden">
-                <p>
-                    Time to make a promise to Vicky! Enter a number. Later, you will need to enter two numbers that sum to this number.
-                </p>
-                <p><input class="sum_num" type="number" max="4294967295" min="0" step="1"></p>
-                <p><button class="submit_sum_num">Download your promise file</button></p>
-                <p>
-                    Click ok when you've sent the promise file to Vicky
-                </p>
-                <p><button class="addition_step_two_done">Done</button></p>
-            </div>
-            <div class="addition_step_three hidden">
-                <p>
-                    Enter the bitcoin address where you want your money to go when you get it back:
-                </p>
-                <p><input class="addition_bitcoin_address"></p>
-                <p>Hint: if you don't have a testnet wallet, you can just send it to a testnet faucet at this address:</p>
-                <p>tb1q349k20q0yft6knyss5cdpcrgmg30taxyt5ggse</p>
-                <p>
-                    Also, it's time to validate that you and Vicky generated the same bitcoin addresses. Do all of these match what Vicky got? (Note: don't send any money to them yet)
-                </p>
-                <div class="address_validation">loading...</div>
-                <p><button class="addition_step_three_done">Yes, they match</button> <button class="addition_step_three_reset">No, they don't match</button></p>
-            </div>
-            <div class="addition_step_four hidden">
-                <p>
-                    Send *PRECISELY* 10,000 sats to the following address to start the contract (if you send the wrong amount it will not work):
-                </p>
-                <div class="funding_address_in_step_four">loading...</div>
-                <p class="asking_for_txid">Asking for txid and vout in 3 seconds</p>
-            </div>
-            <div class="addition_step_five hidden">
-                <p>
-                    Broadcast the following transaction to finalize the contract:
-                </p>
-                <div class="starter_txhex">loading...</div>
-                <p><button class="addition_step_five_done">Done</button></p>
-            </div>
-            <div class="addition_step_six hidden">
-                <p>
-                    What two numbers do you want to reveal to Vicky? Remember, you promised they would add up to <span class="step_six_promise_to_vicky">loading...</span> and she can take your money if you lie
-                </p>
-                <p>Enter your first number</p>
-                <p><input class="addition_num_1" type="number" max="4294967295" min="0" step="1"></p>
-                <p>Enter your second number</p>
-                <p><input class="addition_num_2" type="number" max="4294967295" min="0" step="1"></p>
-                <p><button class="addition_step_six_done">Submit</button></p>
-            </div>
+            <p><button class="choose_addition">Choose this program</button></p>
         </div>
-        <div class="size_checker_program program hidden">
-            <h1>Size checker</h1>
-            <div class="size_checker_step_one">
-                <p>
-                    In this demo you will play as Paul, the prover. The first step is to open up the page where Vicky -- the verifier -- will verify your program, and copy her public key, and paste it here
-                </p>
-                <p>Visit Vicky's page: <a class="vicky_link" href="./vicky.html" target="_blank">Vicky page</a></p>
-                <script>
-                    $( '.vicky_link' ).href = "./vicky.html";
-                    if ( $_GET[ "network" ] ) $( '.vicky_link' ).href = `./vicky.html?network=${$_GET[ "network" ]}`;
-                </script>
-                <p>Enter Vicky's public key</p>
-                <p><input class="vickys_key"></p>
-                <p><button class="size_checker_step_one_done">Done</button></p>
-            </div>
-            <div class="size_checker_step_two hidden">
-                <p>
-                    Time to make a promise to Vicky! Enter a number and say whether it is bigger than a number you'll send Vicky later.
-                </p>
-                <p><input class="std_num" type="number" max="4294967295" min="0" step="1"></p>
-                <p>
-                    Will the number you just entered be bigger than the number you'll send Vicky later?
-                </p>
-                <select class="big_or_not">
-                    <option>Bigger</option>
-                    <option>Not bigger</option>
-                </select>
-                <p><button class="submit_std_num">Download your promise file</button></p>
-                <p>
-                    Click ok when you've sent the promise file to Vicky
-                </p>
-                <p><button class="size_checker_step_two_done">Done</button></p>
-            </div>
-            <div class="size_checker_step_three hidden">
-                <p>
-                    Enter the bitcoin address where you want your money to go when you get it back:
-                </p>
-                <p><input class="size_checker_bitcoin_address"></p>
-                <p>Hint: if you don't have a testnet wallet, you can just send it to a testnet faucet at this address:</p>
-                <p>tb1q349k20q0yft6knyss5cdpcrgmg30taxyt5ggse</p>
-                <p>
-                    Also, it's time to validate that you and Vicky generated the same bitcoin addresses. Do all of these match what Vicky got? (Note: don't send any money to them yet)
-                </p>
-                <div class="address_validation">loading...</div>
-                <p><button class="size_checker_step_three_done">Yes, they match</button> <button class="size_checker_step_three_reset">No, they don't match</button></p>
-            </div>
-            <div class="size_checker_step_four hidden">
-                <p>
-                    Send *PRECISELY* 10,000 sats to the following address to start the contract (if you send the wrong amount it will not work):
-                </p>
-                <div class="funding_address_in_step_four">loading...</div>
-                <p class="asking_for_txid">Asking for txid and vout in 3 seconds</p>
-            </div>
-            <div class="size_checker_step_five hidden">
-                <p>
-                    Broadcast the following transaction to finalize the contract:
-                </p>
-                <div class="starter_txhex">loading...</div>
-                <p><button class="size_checker_step_five_done">Done</button></p>
-            </div>
-            <div class="size_checker_step_six hidden">
-                <p>
-                    What number do you want to reveal to Vicky? Remember, you promised Vicky your original number (<span class="step_six_second_promise_to_vicky">loading...</span>) would be "<span class="step_six_promise_to_vicky">loading...</span>" than the number you're about to enter. She can take your money if you lie.
-                </p>
-                <p>Enter your number of comparison</p>
-                <p><input class="number_of_comparison" type="number" max="4294967295" min="0" step="1"></p>
-                <p><button class="size_checker_step_six_done">Submit</button></p>
-            </div>
+        <hr>
+        <p><button class="view_caveats">View caveats</button></p>
+        <ol class="caveats hidden">
+            <li>This is a toy implementation, don't expect much.</li>
+            <li>I wrote the VM in about 200 lines of javascript which means it barely works.</li>
+            <li>It breaks if you put a program with more than about 3000 logic gates in it. <a
+                    href="https://github.com/supertestnet/tapleaf-circuits/" target="_blank">Help me write a better
+                    one!</a></li>
+            <li>The whitepaper talks about using "binary search" in a challenge to find the shortest path to prove your
+                counterparty is equivocating. I don't know how to program a binary search so I just didn't. Instead, if
+                you challenge the prover, he has to *prove the entire computation himself, all on chain.* Which is very
+                dumb, and expensive. But I wasn't trying to make it the smart way, I was trying to make it the easy way.
+                Help me improve it!</li>
+            <li>If Paul doesn't send Vicky the data he promised, she is technically able to take his money after a 10
+                block timelock, but I didn't automatically give her a transaction for this like I did for Paul. So she's
+                just out of luck til I do that. (Or you can figure out how to write bitcoin transactions manually and do
+                it yourself.)</li>
+            <li>Paul doesn't make Vicky pay him, or even check if her signatures on the presigned transactions are
+                correct. He just yolos his money right into the bitvm address with no checks or balances, so Vicky can
+                easily steal from him by just immediately moving it into the challenge address without presigning the
+                transaction that lets him take it out again. Fixing that is on my todo list. So is having Vicky pay Paul
+                for the computation.</li>
+            <li>There are a bunch of other caveats but whatever, it technically works! I'm really looking forward to
+                testing more functions with this. Bitcoin can run *anything* guys! Let's write some functions for it!
+            </li>
+        </ol>
+    </div>
+    <div class="zero_checker_program program hidden">
+        <h1>Zero checker</h1>
+        <div class="zero_checker_step_one">
+            <p>
+                In this demo you will play as Paul, the prover. The first step is to open up the page where Vicky -- the
+                verifier -- will verify your program, and copy her public key, and paste it here
+            </p>
+            <p>Visit Vicky's page: <a class="vicky_link" href="./vicky.html" target="_blank">Vicky page</a></p>
+            <script>
+                $('.vicky_link').href = "./vicky.html";
+                if ($_GET["network"]) $('.vicky_link').href = `./vicky.html?network=${$_GET["network"]}`;
+            </script>
+            <p>Enter Vicky's public key</p>
+            <p><input class="vickys_key"></p>
+            <p><button class="zero_checker_step_one_done">Done</button></p>
         </div>
-        <script src="scripts/view/paul.js"></script>
-        <script src="scripts/view/zero_checker.js"></script>
-        <script src="scripts/view/size_checker.js"></script>
-        <script src="scripts/view/addition.js"></script>
-    </body>
+        <div class="zero_checker_step_two hidden">
+            <p>
+                Time to make a promise to Vicky! Will your string be all 0s or not all zeros?
+            </p>
+            <select class="all_or_none">
+                <option>All 0s</option>
+                <option>Not all 0s</option>
+            </select>
+            <p><button class="submit_all_or_none">Download your promise file</button></p>
+            <p>
+                Click ok when you've sent the promise file to Vicky
+            </p>
+            <p><button class="zero_checker_step_two_done">Done</button></p>
+        </div>
+        <div class="zero_checker_step_three hidden">
+            <p>
+                Enter the bitcoin address where you want your money to go when you get it back:
+            </p>
+            <p><input class="zero_checker_bitcoin_address"></p>
+            <p>
+                Also, it's time to validate that you and Vicky generated the same bitcoin addresses. Do all of these
+                match what Vicky got? (Note: don't send any money to them yet)
+            </p>
+            <div class="address_validation">loading...</div>
+            <p><button class="zero_checker_step_three_done">Yes, they match</button> <button
+                    class="zero_checker_step_three_reset">No, they don't match</button></p>
+        </div>
+        <div class="zero_checker_step_four hidden">
+            <p>
+                Also, send *PRECISELY* 10,000 sats to the following address to start the contract (if you send the wrong
+                amount it will not work):
+            </p>
+            <div class="funding_address_in_step_four">loading...</div>
+            <p class="asking_for_txid">Asking for txid and vout in 3 seconds</p>
+        </div>
+        <div class="zero_checker_step_five hidden">
+            <p>
+                Broadcast the following transaction to finalize the contract:
+            </p>
+            <div class="starter_txhex">loading...</div>
+            <p><button class="zero_checker_step_five_done">Done</button></p>
+        </div>
+        <div class="zero_checker_step_six hidden">
+            <p>
+                What string do you want to reveal to Vicky? Remember, you promised <span
+                    class="step_six_promise_to_vicky"></span> and she can take your money if you lie
+            </p>
+            <p><input class="zero_checker_revelation_string" maxlength="64"
+                    oninput="this.value=this.value.replace(/[^0-1]/,'')"></p>
+            <p>Add this many more characters: <span class="zero_checker_chars_left">64</span></p>
+            <p>Note that your string must only contain 0s and 1s</p>
+            <p><button class="zero_checker_step_six_done">Submit</button></p>
+        </div>
+    </div>
+    <div class="addition_program program hidden">
+        <h1>Addition</h1>
+        <div class="addition_step_one">
+            <p>
+                In this demo you will play as Paul, the prover. The first step is to open up the page where Vicky -- the
+                verifier -- will verify your program, and copy her public key, and paste it here
+            </p>
+            <p>Visit Vicky's page: <a class="vicky_link" href="./vicky.html" target="_blank">Vicky page</a></p>
+            <script>
+                $('.vicky_link').href = "./vicky.html";
+                if ($_GET["network"]) $('.vicky_link').href = `./vicky.html?network=${$_GET["network"]}`;
+            </script>
+            <p>Enter Vicky's public key</p>
+            <p><input class="vickys_key"></p>
+            <p><button class="addition_step_one_done">Done</button></p>
+        </div>
+        <div class="addition_step_two hidden">
+            <p>
+                Time to make a promise to Vicky! Enter a number. Later, you will need to enter two numbers that sum to
+                this number.
+            </p>
+            <p><input class="sum_num" type="number" max="4294967295" min="0" step="1"></p>
+            <p><button class="submit_sum_num">Download your promise file</button></p>
+            <p>
+                Click ok when you've sent the promise file to Vicky
+            </p>
+            <p><button class="addition_step_two_done">Done</button></p>
+        </div>
+        <div class="addition_step_three hidden">
+            <p>
+                Enter the bitcoin address where you want your money to go when you get it back:
+            </p>
+            <p><input class="addition_bitcoin_address"></p>
+            <p>Hint: if you don't have a testnet wallet, you can just send it to a testnet faucet at this address:</p>
+            <p>tb1q349k20q0yft6knyss5cdpcrgmg30taxyt5ggse</p>
+            <p>
+                Also, it's time to validate that you and Vicky generated the same bitcoin addresses. Do all of these
+                match what Vicky got? (Note: don't send any money to them yet)
+            </p>
+            <div class="address_validation">loading...</div>
+            <p><button class="addition_step_three_done">Yes, they match</button> <button
+                    class="addition_step_three_reset">No, they don't match</button></p>
+        </div>
+        <div class="addition_step_four hidden">
+            <p>
+                Send *PRECISELY* 10,000 sats to the following address to start the contract (if you send the wrong
+                amount it will not work):
+            </p>
+            <div class="funding_address_in_step_four">loading...</div>
+            <p class="asking_for_txid">Asking for txid and vout in 3 seconds</p>
+        </div>
+        <div class="addition_step_five hidden">
+            <p>
+                Broadcast the following transaction to finalize the contract:
+            </p>
+            <div class="starter_txhex">loading...</div>
+            <p><button class="addition_step_five_done">Done</button></p>
+        </div>
+        <div class="addition_step_six hidden">
+            <p>
+                What two numbers do you want to reveal to Vicky? Remember, you promised they would add up to <span
+                    class="step_six_promise_to_vicky">loading...</span> and she can take your money if you lie
+            </p>
+            <p>Enter your first number</p>
+            <p><input class="addition_num_1" type="number" max="4294967295" min="0" step="1"></p>
+            <p>Enter your second number</p>
+            <p><input class="addition_num_2" type="number" max="4294967295" min="0" step="1"></p>
+            <p><button class="addition_step_six_done">Submit</button></p>
+        </div>
+    </div>
+    <div class="size_checker_program program hidden">
+        <h1>Size checker</h1>
+        <div class="size_checker_step_one">
+            <p>
+                In this demo you will play as Paul, the prover. The first step is to open up the page where Vicky -- the
+                verifier -- will verify your program, and copy her public key, and paste it here
+            </p>
+            <p>Visit Vicky's page: <a class="vicky_link" href="./vicky.html" target="_blank">Vicky page</a></p>
+            <script>
+                $('.vicky_link').href = "./vicky.html";
+                if ($_GET["network"]) $('.vicky_link').href = `./vicky.html?network=${$_GET["network"]}`;
+            </script>
+            <p>Enter Vicky's public key</p>
+            <p><input class="vickys_key"></p>
+            <p><button class="size_checker_step_one_done">Done</button></p>
+        </div>
+        <div class="size_checker_step_two hidden">
+            <p>
+                Time to make a promise to Vicky! Enter a number and say whether it is bigger than a number you'll send
+                Vicky later.
+            </p>
+            <p><input class="std_num" type="number" max="4294967295" min="0" step="1"></p>
+            <p>
+                Will the number you just entered be bigger than the number you'll send Vicky later?
+            </p>
+            <select class="big_or_not">
+                <option>Bigger</option>
+                <option>Not bigger</option>
+            </select>
+            <p><button class="submit_std_num">Download your promise file</button></p>
+            <p>
+                Click ok when you've sent the promise file to Vicky
+            </p>
+            <p><button class="size_checker_step_two_done">Done</button></p>
+        </div>
+        <div class="size_checker_step_three hidden">
+            <p>
+                Enter the bitcoin address where you want your money to go when you get it back:
+            </p>
+            <p><input class="size_checker_bitcoin_address"></p>
+            <p>Hint: if you don't have a testnet wallet, you can just send it to a testnet faucet at this address:</p>
+            <p>tb1q349k20q0yft6knyss5cdpcrgmg30taxyt5ggse</p>
+            <p>
+                Also, it's time to validate that you and Vicky generated the same bitcoin addresses. Do all of these
+                match what Vicky got? (Note: don't send any money to them yet)
+            </p>
+            <div class="address_validation">loading...</div>
+            <p><button class="size_checker_step_three_done">Yes, they match</button> <button
+                    class="size_checker_step_three_reset">No, they don't match</button></p>
+        </div>
+        <div class="size_checker_step_four hidden">
+            <p>
+                Send *PRECISELY* 10,000 sats to the following address to start the contract (if you send the wrong
+                amount it will not work):
+            </p>
+            <div class="funding_address_in_step_four">loading...</div>
+            <p class="asking_for_txid">Asking for txid and vout in 3 seconds</p>
+        </div>
+        <div class="size_checker_step_five hidden">
+            <p>
+                Broadcast the following transaction to finalize the contract:
+            </p>
+            <div class="starter_txhex">loading...</div>
+            <p><button class="size_checker_step_five_done">Done</button></p>
+        </div>
+        <div class="size_checker_step_six hidden">
+            <p>
+                What number do you want to reveal to Vicky? Remember, you promised Vicky your original number (<span
+                    class="step_six_second_promise_to_vicky">loading...</span>) would be "<span
+                    class="step_six_promise_to_vicky">loading...</span>" than the number you're about to enter. She can
+                take your money if you lie.
+            </p>
+            <p>Enter your number of comparison</p>
+            <p><input class="number_of_comparison" type="number" max="4294967295" min="0" step="1"></p>
+            <p><button class="size_checker_step_six_done">Submit</button></p>
+        </div>
+    </div>
+    <script src="scripts/view/paul.js"></script>
+    <script src="scripts/view/zero_checker.js"></script>
+    <script src="scripts/view/size_checker.js"></script>
+    <script src="scripts/view/addition.js"></script>
+</body>
+
 </html>
