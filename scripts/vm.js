@@ -123,7 +123,7 @@ var generateBitCommitments = async () => {
     }
 
     operations_array.forEach((operation) => {
-        operation.output_preimages.forEach((output_hash) => subsequent_commitment_preimages.push(output_hash));
+        operation.output_preimages.forEach((output_preimage) => subsequent_commitment_preimages.push(output_preimage));
         operation.output_hashes.forEach((output_hash) => subsequent_commitment_hashes.push(output_hash));
     });
 }
