@@ -62,132 +62,55 @@ var OP_XOR = async (first_input_preimage, first_expected_input_hash, first_input
     return `you cannot spend with this tapleaf`;
 }
 
-setOperationsArray = async (isVerifier) => {
-    var index; for (index = 0; index < circuit.length; index++) {
-        var gate = circuit[index].split(" ").filter(item => item);
-        if (gate[gate.length - 1] == "INV") {
-            if (!wire_settings[gate[2]]) {
-                var input_preimage_0 = getRand(32);
-                var input_preimage_1 = getRand(32);
-                wire_settings[gate[2]] = [input_preimage_0, input_preimage_1];
-            } else {
-                var input_preimage_0 = wire_settings[gate[2]][0];
-                var input_preimage_1 = wire_settings[gate[2]][1];
-            }
-            // Vicky should be able to view the output hashes in her own copies of operations_array and
-            // subsequent_commitment_hashes that she creates. Then she can grab the "right" hashes from
-            // the corresponding indices of the "real" subsequent_commitment_hashes she gets from Paul
-            var input_hash_0 = '';
-            var input_hash_1 = '';
-            if (isVerifier) {
-                input_hash_0 = gate[2] < 64 ? initial_commitment_hashes[gate[2]][0] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(gate[2])][0];
-                input_hash_1 = gate[2] < 64 ? initial_commitment_hashes[gate[2]][1] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(gate[2])][1];
-            } else {
-                input_hash_0 = await sha256(hexToBytes(input_preimage_0));
-                input_hash_1 = await sha256(hexToBytes(input_preimage_1));
-            }
-            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [input_hash_0, input_hash_1];
+setOperationsArray = (isVerifier) => {
+    circuit.forEach((gate) => {
+        var operation = {
+            gate: gate,
+            input_preimages: [],
+            output_preimages: [],
+            input_hashes: [],
+            output_hashes: [],
+        };
 
-            var output_preimage_0 = getRand(32);
-            var output_preimage_1 = getRand(32);
-            wire_settings[gate[3]] = [output_preimage_0, output_preimage_1];
+        var setWireSettingsAndHashes = async (wire_number, isInput) => {
+            if (!wire_settings[wire_number]) {
+                var preimage_0 = getRand(32);
+                var preimage_1 = getRand(32);
+                wire_settings[wire_number] = [preimage_0, preimage_1];
+            } else {
+                var preimage_0 = wire_settings[wire_number][0];
+                var preimage_1 = wire_settings[wire_number][1];
+            }
 
-            var output_hash_0 = '';
-            var output_hash_1 = '';
             if (isVerifier) {
-                output_hash_0 = gate[3] < 64 ? initial_commitment_hashes[gate[3]][0] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(gate[3])][0];
-                output_hash_1 = gate[3] < 64 ? initial_commitment_hashes[gate[3]][1] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(gate[3])][1];
+                var hash_0 = wire_number < 64 ? initial_commitment_hashes[wire_number][0] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(wire_number)][0];
+                var hash_1 = wire_number < 64 ? initial_commitment_hashes[wire_number][1] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(wire_number)][1];
             } else {
-                output_hash_0 = await sha256(hexToBytes(output_preimage_0));
-                output_hash_1 = await sha256(hexToBytes(output_preimage_1));
+                var hash_0 = await sha256(hexToBytes(preimage_0));
+                var hash_1 = await sha256(hexToBytes(preimage_1));
             }
-            wire_hashes[gate[3]] = [output_hash_0, output_hash_1];
-            operations_array.push([
-                "INV",
-                ["input_preimages", input_preimage_0, input_preimage_1],
-                ["output_preimages", output_preimage_0, output_preimage_1],
-                ["input_hashes", input_hash_0, input_hash_1],
-                ["output_hashes", output_hash_0, output_hash_1],
-                `var w_${gate[3]} = INV( wires[ ${gate[2]} ] )`
-            ]);
-        }
-        if (gate[gate.length - 1] == "AND" || gate[gate.length - 1] == "XOR") {
-            if (!wire_settings[gate[2]]) {
-                var first_input_preimage_0 = getRand(32);
-                var first_input_preimage_1 = getRand(32);
-                wire_settings[gate[2]] = [first_input_preimage_0, first_input_preimage_1];
-            } else {
-                var first_input_preimage_0 = wire_settings[gate[2]][0];
-                var first_input_preimage_1 = wire_settings[gate[2]][1];
-            }
-            var first_input_hash_0 = '';
-            var first_input_hash_1 = '';
-            if (isVerifier) {
-                first_input_hash_0 = gate[2] < 64 ? initial_commitment_hashes[gate[2]][0] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(gate[2])][0];
-                first_input_hash_1 = gate[2] < 64 ? initial_commitment_hashes[gate[2]][1] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(gate[2])][1];
-            } else {
-                first_input_hash_0 = await sha256(hexToBytes(first_input_preimage_0));
-                first_input_hash_1 = await sha256(hexToBytes(first_input_preimage_1));
-            }
-            if (!wire_hashes[gate[2]]) wire_hashes[gate[2]] = [first_input_hash_0, first_input_hash_1];
+            if (!wire_hashes[wire_number]) wire_hashes[wire_number] = [hash_0, hash_1];
 
-            if (!wire_settings[gate[3]]) {
-                var second_input_preimage_0 = getRand(32);
-                var second_input_preimage_1 = getRand(32);
-                wire_settings[gate[3]] = [second_input_preimage_0, second_input_preimage_1];
+            if (isInput) {
+                operation.input_preimages.push(wire_settings[wire_number]);
+                operation.input_hashes.push(wire_hashes[wire_number]);
             } else {
-                var second_input_preimage_0 = wire_settings[gate[3]][0];
-                var second_input_preimage_1 = wire_settings[gate[3]][1];
+                operation.output_preimages.push(wire_settings[wire_number]);
+                operation.output_hashes.push(wire_hashes[wire_number]);
             }
-            var second_input_hash_0 = '';
-            var second_input_hash_1 = '';
-            if (isVerifier) {
-                second_input_hash_0 = gate[3] < 64 ? initial_commitment_hashes[gate[3]][0] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(gate[3])][0];
-                second_input_hash_1 = gate[3] < 64 ? initial_commitment_hashes[gate[3]][1] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(gate[3])][1];
-            } else {
-                second_input_hash_0 = await sha256(hexToBytes(second_input_preimage_0));
-                second_input_hash_1 = await sha256(hexToBytes(second_input_preimage_1));
-            }
-            if (!wire_hashes[gate[3]]) wire_hashes[gate[3]] = [second_input_hash_0, second_input_hash_1];
+        };
+        gate.input_wires.forEach(async (w) => await setWireSettingsAndHashes(w, true));
+        gate.output_wires.forEach(async (w) => await setWireSettingsAndHashes(w, false));
 
-            var output_preimage_0 = getRand(32);
-            var output_preimage_1 = getRand(32);
-            wire_settings[gate[4]] = [output_preimage_0, output_preimage_1];
-
-            var output_hash_0 = '';
-            var output_hash_1 = '';
-            if (isVerifier) {
-                output_hash_0 = gate[4] < 64 ? initial_commitment_hashes[gate[4]][0] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(gate[4])][0];
-                output_hash_1 = gate[4] < 64 ? initial_commitment_hashes[gate[4]][1] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(gate[4])][1];
-            } else {
-                output_hash_0 = await sha256(hexToBytes(output_preimage_0));
-                output_hash_1 = await sha256(hexToBytes(output_preimage_1));
-            }
-            wire_hashes[gate[4]] = [output_hash_0, output_hash_1];
-            operations_array.push([
-                gate[gate.length - 1],
-                ["first_input_preimages", first_input_preimage_0, first_input_preimage_1],
-                ["second_input_preimages", second_input_preimage_0, second_input_preimage_1],
-                ["output_preimages", output_preimage_0, output_preimage_1],
-                ["first_input_hashes", first_input_hash_0, first_input_hash_1],
-                ["second_input_hashes", second_input_hash_0, second_input_hash_1],
-                ["output_hashes", output_hash_0, output_hash_1],
-                `var w_${gate[4]} = ${gate[gate.length - 1]}( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`
-            ]);
-        }
-    }
+        operations_array.push(operation);
+    });
+    console.log(operations_array);
 }
 
 function mapWireNumberToCommitmentIndex() {
-    var index; for (index = 0; index < circuit.length; index++) {
-        var gate = circuit[index].split(" ").filter(item => item);
-        if (gate[gate.length - 1] == "INV") {
-            map_wire_to_commitment_index.push(gate[3]);
-        }
-        if (gate[gate.length - 1] == "AND" || gate[gate.length - 1] == "XOR") {
-            map_wire_to_commitment_index.push(gate[4]);
-        }
-    }
+    circuit.forEach((gate) => {
+        gate.output_wires.forEach((output_wire) => map_wire_to_commitment_index.push(output_wire));
+    })
 }
 
 var generateBitCommitments = async () => {
@@ -200,13 +123,9 @@ var generateBitCommitments = async () => {
         initial_commitment_hashes.push([hash_0, hash_1]);
     }
 
-    operations_array.forEach((operation, index) => {
-        if (operation[0] == "INV") subsequent_commitment_preimages.push([operation[2][1], operation[2][2]]);
-        if (operation[0] == "INV") subsequent_commitment_hashes.push([operation[4][1], operation[4][2]]);
-        if (operation[0] == "AND") subsequent_commitment_preimages.push([operation[3][1], operation[3][2]]);
-        if (operation[0] == "AND") subsequent_commitment_hashes.push([operation[6][1], operation[6][2]]);
-        if (operation[0] == "XOR") subsequent_commitment_preimages.push([operation[3][1], operation[3][2]]);
-        if (operation[0] == "XOR") subsequent_commitment_hashes.push([operation[6][1], operation[6][2]]);
+    operations_array.forEach((operation) => {
+        operation.output_preimages.forEach((output_hash) => subsequent_commitment_preimages.push(output_hash));
+        operation.output_hashes.forEach((output_hash) => subsequent_commitment_hashes.push(output_hash));
     });
 }
 
@@ -774,69 +693,54 @@ var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
 
     challenge_scripts = [];
 
-    var i; for (i = 0; i < operations_array.length; i++) {
-        if (operations_array[i][0] == "INV") {
-            var input_hash_pair = [operations_array[i][3][1], operations_array[i][3][2]];
-            var output_hash_pair = [operations_array[i][4][1], operations_array[i][4][2]];
-            var filled_in_templates = [];
+    operations_array.forEach((operation) => {
+        var filled_in_templates = [];
+        if (operation.gate.name == "INV") {
+            var input_hash_pair = operation.input_hashes[0];
+            var output_hash_pair = operation.output_hashes[0];
             filled_in_templates.push(
                 templates["OP_NOT_00"].replace("INSERT_INPUT_HERE", input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
                 templates["OP_NOT_01"].replace("INSERT_INPUT_HERE", input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
                 templates["OP_NOT_10"].replace("INSERT_INPUT_HERE", input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
                 templates["OP_NOT_11"].replace("INSERT_INPUT_HERE", input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1])
             );
-            filled_in_templates.forEach(template => {
-                var leaf = template.replaceAll("\n\n", "\n").replaceAll(" ", "").split("\n");
-                leaf.splice(0, 1);
-                leaf.splice(leaf.length - 1, 1);
-                challenge_scripts.push(leaf);
-            });
-        }
-        if (operations_array[i][0] == "AND") {
-            var first_hash_pair = [operations_array[i][4][1], operations_array[i][4][2]];
-            var second_hash_pair = [operations_array[i][5][1], operations_array[i][5][2]];
-            var output_hash_pair = [operations_array[i][6][1], operations_array[i][6][2]];
-            var filled_in_templates = [];
+        } else if (operation.gate.name == "AND") {
+            var first_input_hash_pair = operation.input_hashes[0];
+            var second_input_hash_pair = operation.input_hashes[1];
+            var output_hash_pair = operation.output_hashes[0];
             filled_in_templates.push(
-                templates["OP_BOOLAND_000"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_BOOLAND_001"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_BOOLAND_010"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_BOOLAND_011"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_BOOLAND_100"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_BOOLAND_101"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_BOOLAND_110"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_BOOLAND_111"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
+                templates["OP_BOOLAND_000"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
+                templates["OP_BOOLAND_001"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
+                templates["OP_BOOLAND_010"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
+                templates["OP_BOOLAND_011"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
+                templates["OP_BOOLAND_100"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
+                templates["OP_BOOLAND_101"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
+                templates["OP_BOOLAND_110"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
+                templates["OP_BOOLAND_111"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
             );
-            filled_in_templates.forEach(template => {
-                var leaf = template.replaceAll("\n\n", "\n").replaceAll(" ", "").split("\n");
-                leaf.splice(0, 1);
-                leaf.splice(leaf.length - 1, 1);
-                challenge_scripts.push(leaf);
-            });
-        }
-        if (operations_array[i][0] == "XOR") {
-            var first_hash_pair = [operations_array[i][4][1], operations_array[i][4][2]];
-            var second_hash_pair = [operations_array[i][5][1], operations_array[i][5][2]];
-            var output_hash_pair = [operations_array[i][6][1], operations_array[i][6][2]];
-            var filled_in_templates = [];
+        } else if (operation.gate.name == "XOR") {
+            var first_input_hash_pair = operation.input_hashes[0];
+            var second_input_hash_pair = operation.input_hashes[1];
+            var output_hash_pair = operation.output_hashes[0];
             filled_in_templates.push(
-                templates["OP_XOR_000"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_XOR_001"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_XOR_010"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_XOR_011"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_XOR_100"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_XOR_101"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_XOR_110"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_XOR_111"].replace("INSERT_FIRST_INPUT_HERE", first_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
+                templates["OP_XOR_000"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
+                templates["OP_XOR_001"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
+                templates["OP_XOR_010"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
+                templates["OP_XOR_011"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
+                templates["OP_XOR_100"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
+                templates["OP_XOR_101"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
+                templates["OP_XOR_110"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
+                templates["OP_XOR_111"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
             );
-            filled_in_templates.forEach(template => {
-                var leaf = template.replaceAll("\n\n", "\n").replaceAll(" ", "").split("\n");
-                leaf.splice(0, 1);
-                leaf.splice(leaf.length - 1, 1);
-                challenge_scripts.push(leaf);
-            });
         }
-    }
+
+        filled_in_templates.forEach(template => {
+            var leaf = template.replaceAll("\n\n", "\n").replaceAll(" ", "").split("\n");
+            leaf.splice(0, 1);
+            leaf.splice(leaf.length - 1, 1);
+            challenge_scripts.push(leaf);
+        });
+    });
 
     var last_leaf = [
         "OP_10",
@@ -929,21 +833,10 @@ var getInputsAndOutputFromRevealedPreimages = async () => {
     }
     //console.log( input_prep );
 
-    var index; for (index = 0; index < circuit.length; index++) {
-        var gate = circuit[index].split(" ").filter(item => item);
-        if (gate[gate.length - 1] == "INV") {
-            wires[gate[3]] = eval(`INV( wires[ ${gate[2]} ] )`);
-            //js_version += `wires[ ${gate[ 3 ]} ] = INV( wires[ ${gate[ 2 ]} ] )\n`;
-        }
-        if (gate[gate.length - 1] == "AND") {
-            wires[gate[4]] = eval(`AND( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`);
-            //js_version += `wires[ ${gate[ 4 ]} ] = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )\n`;
-        }
-        if (gate[gate.length - 1] == "XOR") {
-            wires[gate[4]] = eval(`XOR( wires[ ${gate[2]} ], wires[ ${gate[3]} ] )`);
-            //js_version += `wires[ ${gate[ 4 ]} ] = AND( wires[ ${gate[ 2 ]} ], wires[ ${gate[ 3 ]} ] )\n`;
-        }
-    }
+    circuit.forEach((gate) => {
+        eval(gate.eval_string());
+    })
+
     var input_1 = ``;
     var input_2 = ``;
     var output = ``;

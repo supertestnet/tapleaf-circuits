@@ -267,16 +267,14 @@ $('.addition_step_six_done').onclick = async () => {
         }
     });
     console.log("wires:", wires);
-    var i; for (i = 0; i < operations_array.length; i++) {
-        var fn_to_run = operations_array[i][operations_array[i].length - 1].split("= ")[1];
-        var preimage_to_reveal = eval(fn_to_run);
-        var output_wire = Number(operations_array[i][operations_array[i].length - 1].split(" ")[1].substring(2));
-        wires[output_wire] = preimage_to_reveal;
-        preimage_to_reveal = Number(preimage_to_reveal) + 1;
-        if (operations_array[i][0] == "INV") preimages_to_reveal.push(operations_array[i][2][preimage_to_reveal]);
-        if (operations_array[i][0] == "AND") preimages_to_reveal.push(operations_array[i][3][preimage_to_reveal]);
-        if (operations_array[i][0] == "XOR") preimages_to_reveal.push(operations_array[i][3][preimage_to_reveal]);
-    }
+    operations_array.forEach((operation) => {
+        eval(operation.gate.eval_string());
+        var output_wire = Number(operation.gate.eval_string().split(" ")[1]);
+        operation.output_preimages.forEach(
+            (output_preimage) => preimages_to_reveal.push(output_preimage[wires[output_wire]])
+        );
+    });
+
     var message_to_vicky = {
         msg_type: "results",
         starter_info: {

@@ -100,10 +100,10 @@ async function handleResult(json) {
         preimages_and_their_tapleaves.push(tapleaves_it_is_in);
     }
     expanded_array = [];
-    operations_array.forEach(item => {
-        if (item[0] == "INV") expanded_array.push(["OP_NOT"], ["OP_NOT"], ["OP_NOT"], ["OP_NOT"]);
-        if (item[0] == "AND") expanded_array.push(["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"]);
-        if (item[0] == "XOR") expanded_array.push(["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"]);
+    operations_array.forEach(operation => {
+        if (operation.gate.name == "INV") expanded_array.push(["OP_NOT"], ["OP_NOT"], ["OP_NOT"], ["OP_NOT"]);
+        if (operation.gate.name == "AND") expanded_array.push(["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"]);
+        if (operation.gate.name == "XOR") expanded_array.push(["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"]);
     });
     expanded_array.push("multisig");
     preimages_and_their_tapleaves.forEach((preimage, index) => {
