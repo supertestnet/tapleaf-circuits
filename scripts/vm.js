@@ -62,8 +62,8 @@ var OP_XOR = async (first_input_preimage, first_expected_input_hash, first_input
     return `you cannot spend with this tapleaf`;
 }
 
-setOperationsArray = (isVerifier) => {
-    circuit.forEach((gate) => {
+setOperationsArray = async (isVerifier) => {
+    for (const gate of circuit) {
         var operation = {
             gate: gate,
             input_preimages: [],
@@ -99,12 +99,15 @@ setOperationsArray = (isVerifier) => {
                 operation.output_hashes.push(wire_hashes[wire_number]);
             }
         };
-        gate.input_wires.forEach(async (w) => await setWireSettingsAndHashes(w, true));
-        gate.output_wires.forEach(async (w) => await setWireSettingsAndHashes(w, false));
+
+        for (const w of gate.input_wires)
+            await setWireSettingsAndHashes(w, true);
+
+        for (const w of gate.output_wires)
+            await setWireSettingsAndHashes(w, false);
 
         operations_array.push(operation);
-    });
-    console.log(operations_array);
+    }
 }
 
 function mapWireNumberToCommitmentIndex() {
@@ -116,11 +119,7 @@ function mapWireNumberToCommitmentIndex() {
 var generateBitCommitments = async () => {
     var i; for (i = 0; i < 64; i++) {
         initial_commitment_preimages.push(wire_settings[String(i)]);
-        var preimage_0 = wire_settings[String(i)][0];
-        var preimage_1 = wire_settings[String(i)][1];
-        var hash_0 = await sha256(hexToBytes(preimage_0));
-        var hash_1 = await sha256(hexToBytes(preimage_1));
-        initial_commitment_hashes.push([hash_0, hash_1]);
+        initial_commitment_hashes.push(wire_hashes[String(i)]);
     }
 
     operations_array.forEach((operation) => {
