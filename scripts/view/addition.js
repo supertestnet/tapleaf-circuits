@@ -269,7 +269,7 @@ $('.addition_step_six_done').onclick = async () => {
     console.log("wires:", wires);
     operations_array.forEach((operation) => {
         eval(operation.gate.eval_string());
-        var output_wire = Number(operation.gate.eval_string().split(" ")[1]);
+        var output_wire = Number(operation.gate.output_wires[0]);
         operation.output_preimages.forEach(
             (output_preimage) => preimages_to_reveal.push(output_preimage[wires[output_wire]])
         );
