@@ -113,79 +113,37 @@ async function handleResult(json) {
     });
     var operation_index; for (operation_index = 0; operation_index < expanded_array.length; operation_index++) {
         var item = expanded_array[operation_index];
-        if (item[0] == "OP_NOT" && item.length == 3) {
-            var hash_order = [];
-            challenge_scripts[operation_index].forEach(element => {
-                if (element.length == 64) hash_order.push(element);
-            });
-            if (operation_index == 3) console.log("hash_order:", hash_order)
-            var preimages_in_order = [];
-            var index; for (index = 0; index < expanded_array[operation_index].length; index++) {
-                var preimage = expanded_array[operation_index][index];
-                if (index) {
-                    var hash = await sha256(hexToBytes(preimage));
-                    hash_order.forEach((ordered_hash, hash_index) => {
-                        if (ordered_hash == hash) preimages_in_order[hash_index] = preimage;
-                    });
-                }
+        if (!((item[0] == "OP_NOT" && item.length == 3) || (["OP_BOOLAND", "OP_XOR"].indexOf(item[0]) > -1 && item.length == 4))) continue;
+        var hash_order = [];
+        challenge_scripts[operation_index].forEach(element => {
+            if (element.length == 64) hash_order.push(element);
+        });
+        var preimages_in_order = [];
+        var index; for (index = 0; index < expanded_array[operation_index].length; index++) {
+            var preimage = expanded_array[operation_index][index];
+            if (index) {
+                var hash = await sha256(hexToBytes(preimage));
+                hash_order.forEach((ordered_hash, hash_index) => {
+                    if (ordered_hash == hash) preimages_in_order[hash_index] = preimage;
+                });
             }
-            expanded_array[operation_index] = ["OP_NOT", ...preimages_in_order];
-            if (operation_index == 3) console.log("preimages in order:", preimages_in_order);
         }
-        if (item[0] == "OP_BOOLAND" && item.length == 4) {
-            var hash_order = [];
-            challenge_scripts[operation_index].forEach(element => {
-                if (element.length == 64) hash_order.push(element);
-            });
-            var preimages_in_order = [];
-            var index; for (index = 0; index < expanded_array[operation_index].length; index++) {
-                var preimage = expanded_array[operation_index][index];
-                if (index) {
-                    var hash = await sha256(hexToBytes(preimage));
-                    hash_order.forEach((ordered_hash, hash_index) => {
-                        if (ordered_hash == hash) preimages_in_order[hash_index] = preimage;
-                    });
-                }
-            }
-            expanded_array[operation_index] = ["OP_BOOLAND", ...preimages_in_order];
-        }
-        if (item[0] == "OP_XOR" && item.length == 4) {
-            var hash_order = [];
-            challenge_scripts[operation_index].forEach(element => {
-                if (element.length == 64) hash_order.push(element);
-            });
-            var preimages_in_order = [];
-            var index; for (index = 0; index < expanded_array[operation_index].length; index++) {
-                var preimage = expanded_array[operation_index][index];
-                if (index) {
-                    var hash = await sha256(hexToBytes(preimage));
-                    hash_order.forEach((ordered_hash, hash_index) => {
-                        if (ordered_hash == hash) preimages_in_order[hash_index] = preimage;
-                    });
-                }
-            }
-            expanded_array[operation_index] = ["OP_XOR", ...preimages_in_order];
-        }
+        expanded_array[operation_index] = [item[0], ...preimages_in_order];
     }
     var index; for (index = 0; index < expanded_array.length; index++) {
         var item = expanded_array[index];
         if (item[0] == "OP_NOT" && item.length == 3) {
             var i_can_spend = await OP_NOT(item[1], challenge_scripts[index][2], Number(challenge_scripts[index][4].substring(challenge_scripts[index][4].length - 1)), item[2], challenge_scripts[index][8], Number(challenge_scripts[index][10].substring(challenge_scripts[index][10].length - 1)));
-            if (i_can_spend.startsWith("you can spend")) {
-                return await handleBrokenPromise(i_can_spend, item[0], challenge_scripts[index]);
-            }
         }
-        if (item[0] == "OP_BOOLAND" && item.length == 4) {
+        else if (item[0] == "OP_BOOLAND" && item.length == 4) {
             var i_can_spend = await OP_BOOLAND(item[1], challenge_scripts[index][2], Number(challenge_scripts[index][4].substring(challenge_scripts[index][4].length - 1)), item[2], challenge_scripts[index][7], Number(challenge_scripts[index][9].substring(challenge_scripts[index][9].length - 1)), item[3], challenge_scripts[index][13], Number(challenge_scripts[index][15].substring(challenge_scripts[index][15].length - 1)));
-            if (i_can_spend.startsWith("you can spend")) {
-                return await handleBrokenPromise(i_can_spend, item[0], challenge_scripts[index]);
-            }
         }
-        if (item[0] == "OP_XOR" && item.length == 4) {
+        else if (item[0] == "OP_XOR" && item.length == 4) {
             var i_can_spend = await OP_XOR(item[1], challenge_scripts[index][2], Number(challenge_scripts[index][4].substring(challenge_scripts[index][4].length - 1)), item[2], challenge_scripts[index][7], Number(challenge_scripts[index][9].substring(challenge_scripts[index][9].length - 1)), item[3], challenge_scripts[index][13], Number(challenge_scripts[index][15].substring(challenge_scripts[index][15].length - 1)));
-            if (i_can_spend.startsWith("you can spend")) {
-                return await handleBrokenPromise(i_can_spend, item[0], challenge_scripts[index]);
-            }
+        }
+
+        if (i_can_spend && i_can_spend.startsWith("you can spend")) {
+            return await handleBrokenPromise(i_can_spend, item[0], challenge_scripts[index]);
         }
     }
     var r = await getInputsAndOutputFromRevealedPreimages();
