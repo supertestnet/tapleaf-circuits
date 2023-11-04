@@ -10,6 +10,7 @@ for (var key of url_keys) $_GET[key] = url_params.get(key);
 var network = "testnet";
 if ($_GET["network"] == "regtest") network = "regtest";
 var circuit = [];
+var programs = {};
 var number_of_preimages_to_expect = null;
 //the following line refers to the "second" number on line 2 of a bristol circuit file
 //e.g. if the second line is 2 64 32 then the following line would be 64 and it means

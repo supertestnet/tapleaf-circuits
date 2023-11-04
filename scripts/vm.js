@@ -797,47 +797,47 @@ var generateFundingAddress = (proverPubkey, verifierPubkey) => {
     return funding_address;
 }
 
-var getInputsAndOutputFromRevealedPreimages = async () => {
-    //var input_prep = ``;
-    var j; for (j = 0; j < initial_commitment_hashes.length; j++) {
-        var index = j;
-        var input = initial_commitment_hashes[index];
-        //input_prep += `Input #${index + 1} is `;
-        var i; for (i = 0; i < preimages_from_paul.length; i++) {
-            var preimage = preimages_from_paul[i];
+var runCircuitAndGetInputAndOutputs = async () => {
+    var wire_number; for (wire_number = 0; wire_number < initial_commitment_hashes.length; wire_number++) {
+        for (const preimage of preimages_from_paul) {
             var hash = await sha256(hexToBytes(preimage));
-            if (hash == input[0]) {
-                wires[index] = 0;
-                //input_prep += `0 because the preimage to ${input[ 0 ]} was revealed (its preimage is ${preimage})\n\n`;
+            if (hash == initial_commitment_hashes[wire_number][0]) {
+                wires[wire_number] = 0;
                 break;
             }
-            if (hash == input[1]) {
-                wires[index] = 1;
-                //input_prep += `1 because the preimage to ${input[ 1 ]} was revealed (its preimage is ${preimage})\n\n`;
+            else if (hash == initial_commitment_hashes[wire_number][1]) {
+                wires[wire_number] = 1;
                 break;
             }
         }
     }
-    //console.log( input_prep );
 
     circuit.forEach((gate) => {
         eval(gate.eval_string());
     })
 
+    var inputs = [];
+    var outputs = [];
     var input_1 = ``;
     var input_2 = ``;
     var output = ``;
+
     var i; for (i = 0; i < number_of_inputs; i++) {
         input_1 += String(wires[i]);
     }
+    inputs.push(input_1);
+
     if (number_of_inputs_2) {
         var i; for (i = 0; i < number_of_inputs_2; i++) {
-            input_2 += String(wires[i + number_of_inputs]);
+            input_2 += String(wires[number_of_inputs + i]);
         }
+        inputs.push(input_2);
     }
+
     var i; for (i = number_of_preimages_to_expect - number_of_outputs; i < number_of_preimages_to_expect; i++) {
         output += String(wires[i]);
     }
+    outputs.push(output);
 
-    return { input_1, input_2, output };
+    return { inputs, outputs };
 }

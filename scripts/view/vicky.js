@@ -146,28 +146,12 @@ async function handleResult(json) {
             return await handleBrokenPromise(i_can_spend, item[0], challenge_scripts[index]);
         }
     }
-    var r = await getInputsAndOutputFromRevealedPreimages();
-    var input_1 = r.input_1;
-    var input_2 = r.input_2
-    var output = r.output;
-    console.log("inputs and outputs:", input_1, input_2, output);
 
-    if (program == "zero checker") {
-        var is_or_is_not = "is";
-        if (!Number(output)) is_or_is_not = "is not";
-        alert(`The prover kept his promise. He promised ${pauls_promise.toLowerCase()}. This is what he sent you:\n\n${input_1}\n\nBitvm checked whether that string consists of all zeros and this was its result: ${!!Number(output)} -- so it determined the string ${is_or_is_not} all zeros. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too. This completes the procedure; refresh your page to try again.`);
-    }
-    if (program == "size checker") {
-        var partial_promise = pauls_promise[1].toLowerCase();
-        if (partial_promise == "not bigger") partial_promise = "equal to or less";
-        alert(`The prover kept his promise. He promised to give you two numbers, the first of which is ${partial_promise} than the second. These are the two numbers he sent you:\n\n${parseInt(reverseString(input_1), 2)} and ${parseInt(reverseString(input_2), 2)}\n\nBitvm checked whether the first is ${partial_promise} than the second and this was its result: true -- so it determined the first is ${partial_promise} than the second. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too. This completes the procedure; refresh your page to try again.`);
-    }
-    if (program == "addition") {
-        var do_or_dont = "";
-        console.log(input_1, input_2, output, parseInt(input_1, 2), parseInt(input_2, 2), parseInt(output, 2), parseInt(input_1, 2) + parseInt(input_2, 2), parseInt(input_1, 2) + parseInt(input_2, 2) == parseInt(output, 2));
-        if (parseInt(input_1, 2) + parseInt(input_2, 2) != parseInt(output, 2)) do_or_dont = "don't ";
-        alert(`The prover kept his promise. He promised to give you two numbers that ${do_or_dont}add up to ${parseInt(output, 2)}. The first number he gave you is ${parseInt(input_1, 2)} and the second is ${parseInt(input_2, 2)}.\n\nBitvm checked whether they add up to ${parseInt(output, 2)} and it determined the equation is: ${parseInt(input_1, 2) + parseInt(input_2, 2) == parseInt(output, 2)} -- just as the prover promised. Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too. This completes the procedure; refresh your page to try again.`);
-    }
+    // If we get here, paul has kept his promise!
+
+    var r = await runCircuitAndGetInputAndOutputs();
+    var prompt = programs[program].promise_kept_prompt(r.inputs, r.outputs, pauls_promise);
+    alert(prompt);
 }
 
 async function handlePromise(json) {
@@ -181,15 +165,7 @@ async function handlePromise(json) {
     bit_commitment_address = generateBitCommitmentAddress(pauls_key, pubkey);
     anti_contradiction_address = generateAntiContradictionAddress(pauls_key, pubkey);
     funding_address = generateFundingAddress(pauls_key, pubkey);
-    if (program == "zero checker") {
-        parseBristolString(circuit_bristol_zero_checker);
-    }
-    if (program == "size checker") {
-        parseBristolString(circuit_bristol_size_checker);
-    }
-    if (program == "addition") {
-        parseBristolString(circuit_bristol_addition);
-    }
+    programs[program].initialize();
     mapWireNumberToCommitmentIndex();
     await setOperationsArray(true);
     //Vicky needs to take json[ "output_preimages" ] and add it to
@@ -205,6 +181,7 @@ async function handlePromise(json) {
     }
     var preimages_found = 0;
     var output = ``;
+    var outputs = [];
     if (wire_hashes.length != number_of_preimages_to_expect) {
         alert(`The program they sent you is invalid. Aborting and starting over.`);
         window.location.reload();
@@ -222,6 +199,7 @@ async function handlePromise(json) {
             return true;
         });
     }
+    outputs.push(output);
     if (preimages_found != number_of_outputs) {
         alert(`The prover sent you bad info. Aborting. Number of preimages you expected: ${number_of_outputs} Number of preimages you got: ${preimages_found}`);
         window.location.reload();
@@ -229,19 +207,7 @@ async function handlePromise(json) {
     }
     questionable_preimages.forEach(item => preimages_from_paul.push(item));
     var message = `Someone wants to run a program with you called "${program}."`;
-    if (program == "zero checker") {
-        var is_or_is_not = "is";
-        if (!Number(output)) is_or_is_not = "is not";
-        message += ` They promise to send you a string which ${is_or_is_not} just a bunch of zeros. They'll put up a bond to show they mean it, and if they break their promise, you can prove they lied and take their money.`
-    }
-    if (program == "size checker") {
-        var partial_promise = pauls_promise[1].toLowerCase();
-        if (partial_promise == "not bigger") partial_promise = "equal to or less";
-        message += ` They promise to send you two numbers, the first of which is ${partial_promise} than the second. They'll put up a bond to show they mean it, and if they break their promise, you can prove they lied and take their money.`
-    }
-    if (program == "addition") {
-        message += ` They promise to send you two numbers which add up to ${parseInt(output, 2)}. They'll put up a bond to show they mean it, and if they break their promise, you can prove they lied and take their money.`
-    }
+    message += " " + programs[program].promise_prompt(outputs, pauls_promise);
     message += ` Do you want to try it?`;
     var conf = confirm(message);
     if (!conf) {
