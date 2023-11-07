@@ -149,11 +149,11 @@ var generateBitCommitmentAddress = (proverPubkey, verifierPubkey) => {
 
     var bit_commitment_template = `
         OP_SHA256
-        INSERT_16_BYTE_HERE
+        INSERT_HASH_ZERO_HERE
         OP_EQUAL
         OP_SWAP
         OP_SHA256
-        INSERT_17_BYTE_HERE
+        INSERT_HASH_ONE_HERE
         OP_EQUAL
         OP_BOOLOR
         OP_VERIFY
@@ -162,11 +162,11 @@ var generateBitCommitmentAddress = (proverPubkey, verifierPubkey) => {
     var bit_commitment_script = ``;
 
     initial_commitment_hashes.forEach(hash_pair => {
-        bit_commitment_script += bit_commitment_template.replace("INSERT_16_BYTE_HERE", hash_pair[0]).replace("INSERT_17_BYTE_HERE", hash_pair[1]);
+        bit_commitment_script += bit_commitment_template.replace("INSERT_HASH_ZERO_HERE", hash_pair[0]).replace("INSERT_HASH_ONE_HERE", hash_pair[1]);
     });
 
     subsequent_commitment_hashes.forEach(hash_pair => {
-        bit_commitment_script += bit_commitment_template.replace("INSERT_16_BYTE_HERE", hash_pair[0]).replace("INSERT_17_BYTE_HERE", hash_pair[1]);
+        bit_commitment_script += bit_commitment_template.replace("INSERT_HASH_ZERO_HERE", hash_pair[0]).replace("INSERT_HASH_ONE_HERE", hash_pair[1]);
     });
 
     bit_commitment_script += `
@@ -205,10 +205,10 @@ var generateBitCommitmentAddress = (proverPubkey, verifierPubkey) => {
 var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
     var anti_contradiction_template = `
         OP_SHA256
-        INSERT_16_BYTE_HERE
+        INSERT_HASH_ZERO_HERE
         OP_EQUALVERIFY
         OP_SHA256
-        INSERT_17_BYTE_HERE
+        INSERT_HASH_ONE_HERE
         OP_EQUALVERIFY
         ${verifierPubkey}
         OP_CHECKSIG
@@ -217,7 +217,7 @@ var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
     var anti_contradiction_scripts = [];
 
     initial_commitment_hashes.forEach(hash_pair => {
-        var filled_in = anti_contradiction_template.replace("INSERT_16_BYTE_HERE", hash_pair[0]).replace("INSERT_17_BYTE_HERE", hash_pair[1]);
+        var filled_in = anti_contradiction_template.replace("INSERT_HASH_ZERO_HERE", hash_pair[0]).replace("INSERT_HASH_ONE_HERE", hash_pair[1]);
         var leaf = filled_in.replaceAll("\n\n", "\n").replaceAll(" ", "").split("\n");
         leaf.splice(0, 1);
         leaf.splice(leaf.length - 1, 1);
@@ -225,7 +225,7 @@ var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
     });
 
     subsequent_commitment_hashes.forEach(hash_pair => {
-        var filled_in = anti_contradiction_template.replace("INSERT_16_BYTE_HERE", hash_pair[0]).replace("INSERT_17_BYTE_HERE", hash_pair[1]);
+        var filled_in = anti_contradiction_template.replace("INSERT_HASH_ZERO_HERE", hash_pair[0]).replace("INSERT_HASH_ONE_HERE", hash_pair[1]);
         var leaf = filled_in.replaceAll("\n\n", "\n").replaceAll(" ", "").split("\n");
         leaf.splice(0, 1);
         leaf.splice(leaf.length - 1, 1);
