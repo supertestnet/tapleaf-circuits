@@ -90,7 +90,7 @@ async function handleResult(json) {
     preimages_from_paul = removeDuplicates(preimages_from_paul);
     discardUnusedPreimages();
     //todo: actually give Vicky a transaction to broadcast here
-    if (preimages_from_paul.length < number_of_preimages_to_expect) return alert("oh no! Go put your counterparty’s money in the bit commitment address!");
+    if (preimages_from_paul.length < circuit.wires.length) return alert("oh no! Go put your counterparty’s money in the bit commitment address!");
     //todo: also give Vicky a transaction to broadcast if Paul doesn't do his bit commitments in time
     //todo: also make the circuits reusable so that Vicky and Paul don't force close in every transaction
     var preimages_and_their_tapleaves = [];
@@ -100,10 +100,10 @@ async function handleResult(json) {
         preimages_and_their_tapleaves.push(tapleaves_it_is_in);
     }
     expanded_array = [];
-    operations_array.forEach(operation => {
-        if (operation.gate.name == "INV") expanded_array.push(["OP_NOT"], ["OP_NOT"], ["OP_NOT"], ["OP_NOT"]);
-        if (operation.gate.name == "AND") expanded_array.push(["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"]);
-        if (operation.gate.name == "XOR") expanded_array.push(["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"]);
+    circuit.gates.forEach(gate => {
+        if (gate.name == "INV") expanded_array.push(["OP_NOT"], ["OP_NOT"], ["OP_NOT"], ["OP_NOT"]);
+        if (gate.name == "AND") expanded_array.push(["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"]);
+        if (gate.name == "XOR") expanded_array.push(["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"]);
     });
     expanded_array.push("multisig");
     preimages_and_their_tapleaves.forEach((preimage, index) => {
@@ -166,8 +166,7 @@ async function handlePromise(json) {
     anti_contradiction_address = generateAntiContradictionAddress(pauls_key, pubkey);
     funding_address = generateFundingAddress(pauls_key, pubkey);
     programs[program].initialize();
-    mapWireNumberToCommitmentIndex();
-    await setOperationsArray(true);
+    await setWiresPreimagesAndHashes(true);
     //Vicky needs to take json[ "output_preimages" ] and add it to
     //preimages_from_paul, but only if she sees that it actually corresponds
     //to the hashes in the last n wires, n being the number of output wires
@@ -182,13 +181,8 @@ async function handlePromise(json) {
     var preimages_found = 0;
     var output = ``;
     var outputs = [];
-    if (wire_hashes.length != number_of_preimages_to_expect) {
-        alert(`The program they sent you is invalid. Aborting and starting over.`);
-        window.location.reload();
-        return;
-    }
-    var i; for (i = number_of_preimages_to_expect - number_of_outputs; i < number_of_preimages_to_expect; i++) {
-        wire_hashes[i].every((expected_hash, index) => {
+    var i; for (i = circuit.wires.length - circuit.output_sizes[0]; i < circuit.wires.length; i++) {
+        circuit.wires[i].settings_hashes.every((expected_hash, index) => {
             var j; for (j = 0; j < questionable_hashes.length; j++) {
                 if (expected_hash == questionable_hashes[j]) {
                     preimages_found = preimages_found + 1;
@@ -200,8 +194,8 @@ async function handlePromise(json) {
         });
     }
     outputs.push(output);
-    if (preimages_found != number_of_outputs) {
-        alert(`The prover sent you bad info. Aborting. Number of preimages you expected: ${number_of_outputs} Number of preimages you got: ${preimages_found}`);
+    if (preimages_found != circuit.output_sizes[0]) {
+        alert(`The prover sent you bad info. Aborting. Number of preimages you expected: ${circuit.output_sizes[0]} Number of preimages you got: ${preimages_found}`);
         window.location.reload();
         return;
     }

@@ -62,69 +62,57 @@ var OP_XOR = async (first_input_preimage, first_expected_input_hash, first_input
     return `you cannot spend with this tapleaf`;
 }
 
-setOperationsArray = async (isVerifier) => {
-    for (const gate of circuit) {
-        var operation = {
-            gate: gate,
-            input_preimages: [],
-            output_preimages: [],
-            input_hashes: [],
-            output_hashes: [],
-        };
+setWiresPreimagesAndHashes = async (isVerifier) => {
+    if (isVerifier) {
+        circuit.gates.forEach((gate) => {
+            gate.output_wires.forEach((wire_number) => map_wire_to_commitment_index.push(wire_number));
+        });
+    }
 
-        var setWireSettingsAndHashes = async (wire_number, isInput) => {
-            if (!wire_settings[wire_number]) {
+    var sum_of_all_input_sizes = circuit.input_sizes.reduce((ac, c) => ac + c, 0);
+    for (const gate of circuit.gates) {
+        var setPreimagesAndHashes = async (wire_number) => {
+            if (!circuit.wires[wire_number].settings_preimages.length) {
                 var preimage_0 = getRand(32);
                 var preimage_1 = getRand(32);
-                wire_settings[wire_number] = [preimage_0, preimage_1];
+                circuit.wires[wire_number].settings_preimages = [preimage_0, preimage_1];
             } else {
-                var preimage_0 = wire_settings[wire_number][0];
-                var preimage_1 = wire_settings[wire_number][1];
+                var preimage_0 = circuit.wires[wire_number].settings_preimages[0];
+                var preimage_1 = circuit.wires[wire_number].settings_preimages[1];
             }
 
-            if (isVerifier) {
-                var hash_0 = wire_number < 64 ? initial_commitment_hashes[wire_number][0] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(wire_number)][0];
-                var hash_1 = wire_number < 64 ? initial_commitment_hashes[wire_number][1] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(wire_number)][1];
-            } else {
-                var hash_0 = await sha256(hexToBytes(preimage_0));
-                var hash_1 = await sha256(hexToBytes(preimage_1));
-            }
-            if (!wire_hashes[wire_number]) wire_hashes[wire_number] = [hash_0, hash_1];
-
-            if (isInput) {
-                operation.input_preimages.push(wire_settings[wire_number]);
-                operation.input_hashes.push(wire_hashes[wire_number]);
-            } else {
-                operation.output_preimages.push(wire_settings[wire_number]);
-                operation.output_hashes.push(wire_hashes[wire_number]);
+            if (!circuit.wires[wire_number].settings_hashes.length) {
+                if (!isVerifier) {
+                    var hash_0 = await sha256(hexToBytes(preimage_0));
+                    var hash_1 = await sha256(hexToBytes(preimage_1));
+                } else {
+                    var hash_0 = wire_number < sum_of_all_input_sizes ? initial_commitment_hashes[wire_number][0] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(wire_number)][0];
+                    var hash_1 = wire_number < sum_of_all_input_sizes ? initial_commitment_hashes[wire_number][1] : subsequent_commitment_hashes[map_wire_to_commitment_index.indexOf(wire_number)][1];
+                }
+                circuit.wires[wire_number].settings_hashes = [hash_0, hash_1];
             }
         };
 
         for (const w of gate.input_wires)
-            await setWireSettingsAndHashes(w, true);
+            await setPreimagesAndHashes(w);
 
         for (const w of gate.output_wires)
-            await setWireSettingsAndHashes(w, false);
-
-        operations_array.push(operation);
+            await setPreimagesAndHashes(w);
     }
-}
-
-function mapWireNumberToCommitmentIndex() {
-    circuit.forEach((gate) => {
-        gate.output_wires.forEach((output_wire) => map_wire_to_commitment_index.push(output_wire));
-    })
 }
 
 var generateBitCommitments = async () => {
-    var i; for (i = 0; i < 64; i++) {
-        initial_commitment_preimages.push(wire_settings[String(i)]);
-        initial_commitment_hashes.push(wire_hashes[String(i)]);
+    var sum_of_all_input_sizes = circuit.input_sizes.reduce((ac, c) => ac + c, 0);
+    var i; for (i = 0; i < sum_of_all_input_sizes; i++) {
+        initial_commitment_preimages.push(circuit.wires[String(i)].settings_preimages);
+        initial_commitment_hashes.push(circuit.wires[String(i)].settings_hashes);
     }
 
-    operations_array.forEach((operation) => {
-        operation.output_preimages.forEach((output_preimage) => subsequent_commitment_preimages.push(output_preimage));
-        operation.output_hashes.forEach((output_hash) => subsequent_commitment_hashes.push(output_hash));
+    circuit.gates.forEach((gate) => {
+        gate.output_wires.forEach((wire_number) => {
+            subsequent_commitment_preimages.push(circuit.wires[wire_number].settings_preimages);
+            subsequent_commitment_hashes.push(circuit.wires[wire_number].settings_hashes);
+        });
     });
 }
 
@@ -680,21 +668,21 @@ var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
 
     challenge_scripts = [];
 
-    operations_array.forEach((operation) => {
+    circuit.gates.forEach((gate) => {
         var filled_in_templates = [];
-        if (operation.gate.name == "INV") {
-            var input_hash_pair = operation.input_hashes[0];
-            var output_hash_pair = operation.output_hashes[0];
+        if (gate.name == "INV") {
+            var input_hash_pair = circuit.wires[gate.input_wires[0]].settings_hashes;
+            var output_hash_pair = circuit.wires[gate.output_wires[0]].settings_hashes;
             filled_in_templates.push(
                 templates["OP_NOT_00"].replace("INSERT_INPUT_HERE", input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
                 templates["OP_NOT_01"].replace("INSERT_INPUT_HERE", input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
                 templates["OP_NOT_10"].replace("INSERT_INPUT_HERE", input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
                 templates["OP_NOT_11"].replace("INSERT_INPUT_HERE", input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1])
             );
-        } else if (operation.gate.name == "AND") {
-            var first_input_hash_pair = operation.input_hashes[0];
-            var second_input_hash_pair = operation.input_hashes[1];
-            var output_hash_pair = operation.output_hashes[0];
+        } else if (gate.name == "AND") {
+            var first_input_hash_pair = circuit.wires[gate.input_wires[0]].settings_hashes;
+            var second_input_hash_pair = circuit.wires[gate.input_wires[1]].settings_hashes;
+            var output_hash_pair = circuit.wires[gate.output_wires[0]].settings_hashes;
             filled_in_templates.push(
                 templates["OP_BOOLAND_000"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
                 templates["OP_BOOLAND_001"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
@@ -705,10 +693,10 @@ var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
                 templates["OP_BOOLAND_110"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
                 templates["OP_BOOLAND_111"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
             );
-        } else if (operation.gate.name == "XOR") {
-            var first_input_hash_pair = operation.input_hashes[0];
-            var second_input_hash_pair = operation.input_hashes[1];
-            var output_hash_pair = operation.output_hashes[0];
+        } else if (gate.name == "XOR") {
+            var first_input_hash_pair = circuit.wires[gate.input_wires[0]].settings_hashes;
+            var second_input_hash_pair = circuit.wires[gate.input_wires[1]].settings_hashes;
+            var output_hash_pair = circuit.wires[gate.output_wires[0]].settings_hashes;
             filled_in_templates.push(
                 templates["OP_XOR_000"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
                 templates["OP_XOR_001"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
@@ -802,42 +790,41 @@ var runCircuitAndGetInputAndOutputs = async () => {
         for (const preimage of preimages_from_paul) {
             var hash = await sha256(hexToBytes(preimage));
             if (hash == initial_commitment_hashes[wire_number][0]) {
-                wires[wire_number] = 0;
+                circuit.wires[wire_number].setting = 0;
                 break;
             }
             else if (hash == initial_commitment_hashes[wire_number][1]) {
-                wires[wire_number] = 1;
+                circuit.wires[wire_number].setting = 1;
                 break;
             }
         }
     }
 
-    circuit.forEach((gate) => {
+    circuit.gates.forEach((gate) => {
         eval(gate.eval_string());
     })
 
     var inputs = [];
     var outputs = [];
-    var input_1 = ``;
-    var input_2 = ``;
-    var output = ``;
+    var output_value = ``;
 
-    var i; for (i = 0; i < number_of_inputs; i++) {
-        input_1 += String(wires[i]);
-    }
-    inputs.push(input_1);
-
-    if (number_of_inputs_2) {
-        var i; for (i = 0; i < number_of_inputs_2; i++) {
-            input_2 += String(wires[number_of_inputs + i]);
+    var i; for (i = 0; i < circuit.input_sizes.length; i++) {
+        var input_value = ``;
+        var input_start_wire = 0;
+        var j; for (j = 0; j < i; j++) {
+            input_start_wire += circuit.input_sizes[j];
         }
-        inputs.push(input_2);
+        var k; for (k = 0; k < circuit.input_sizes[i]; k++) {
+            input_value += String(circuit.wires[input_start_wire + k].setting);
+        }
+        inputs.push(input_value);
     }
 
-    var i; for (i = number_of_preimages_to_expect - number_of_outputs; i < number_of_preimages_to_expect; i++) {
-        output += String(wires[i]);
+    // TODO: adjust for multiple outputs (like above)
+    var i; for (i = circuit.wires.length - circuit.output_sizes[0]; i < circuit.wires.length; i++) {
+        output_value += String(circuit.wires[i].setting);
     }
-    outputs.push(output);
+    outputs.push(output_value);
 
     return { inputs, outputs };
 }

@@ -1,6 +1,6 @@
 programs["addition"] = {
     initialize: () => {
-        parseBristolString(circuit_bristol_addition);
+        circuit.parseBristolString(circuit_bristol_addition);
     },
     promise_prompt: (outputs, promise) => {
         var prompt = ``;
@@ -34,7 +34,7 @@ if ($('.addition_program')) {
         $('.addition_program').classList.remove("hidden");
         $('.home').classList.add("hidden");
         programs["addition"].initialize();
-        await setOperationsArray(false);
+        await setWiresPreimagesAndHashes(false);
         await generateBitCommitments();
     }
     $('.addition_step_one_done').onclick = () => {
@@ -52,9 +52,9 @@ if ($('.addition_program')) {
         bin_array = binary.split("")
         bin_array.forEach((item, index) => bin_array[index] = Number(item));
         var output_preimages = [];
-        var i; for (i = number_of_preimages_to_expect - number_of_outputs; i < number_of_preimages_to_expect; i++) {
-            var preimage = wire_settings[String(i)][bin_array[(i - number_of_preimages_to_expect) + number_of_outputs]];
-            // console.log( i, ( i - number_of_preimages_to_expect ) + number_of_outputs, preimage );
+        var i; for (i = circuit.wires.length - circuit.output_sizes[0]; i < circuit.wires.length; i++) {
+            var preimage = circuit.wires[String(i)].settings_preimages[bin_array[(i - circuit.wires.length) + circuit.output_sizes[0]]];
+            // console.log( i, ( i - circuit.wires.length ) + circuit.output_sizes[0], preimage );
             output_preimages.push(preimage);
         }
         var message_to_vicky = {
@@ -291,20 +291,20 @@ if ($('.addition_program')) {
         console.log("num1:", bin_array_1.join(""), "num2:", bin_array_2.join(""));
         initial_commitment_preimages.forEach((preimage_pair, index) => {
             if (index < 32) {
-                wires.push(bin_array_1[index]);
+                circuit.wires[index].setting = bin_array_1[index];
                 preimages_to_reveal.push(preimage_pair[bin_array_1[index]]);
             } else {
-                wires.push(bin_array_2[index - 32]);
+                circuit.wires[index].setting = bin_array_2[index - 32];
                 preimages_to_reveal.push(preimage_pair[bin_array_2[index - 32]]);
             }
         });
-        console.log("wires:", wires);
-        operations_array.forEach((operation) => {
-            eval(operation.gate.eval_string());
-            var output_wire = Number(operation.gate.output_wires[0]);
-            operation.output_preimages.forEach(
-                (output_preimage) => preimages_to_reveal.push(output_preimage[wires[output_wire]])
-            );
+
+        circuit.gates.forEach((gate) => {
+            eval(gate.eval_string());
+            gate.output_wires.forEach((wire_number) => {
+                var setting = circuit.wires[wire_number].setting;
+                preimages_to_reveal.push(circuit.wires[wire_number].settings_preimages[setting]);
+            });
         });
 
         var message_to_vicky = {

@@ -1,6 +1,6 @@
 programs["size checker"] = {
     initialize: () => {
-        parseBristolString(circuit_bristol_size_checker);
+        circuit.parseBristolString(circuit_bristol_size_checker);
     },
     promise_prompt: (outputs, promise) => {
         var prompt = ``;
@@ -38,7 +38,7 @@ if ($('.size_checker_program')) {
         $('.size_checker_program').classList.remove("hidden");
         $('.home').classList.add("hidden");
         programs["size checker"].initialize();
-        await setOperationsArray(false);
+        await setWiresPreimagesAndHashes(false);
         await generateBitCommitments();
     }
     $('.size_checker_step_one_done').onclick = () => {
@@ -63,7 +63,7 @@ if ($('.size_checker_program')) {
         //than or equal to" the second number, which is the same thing as
         //returning false if the first number is "bigger"
         var setting = $('.big_or_not').value.toLowerCase() == "bigger" ? 0 : 1;
-        var preimage = wire_settings[String(number_of_preimages_to_expect - number_of_outputs)][setting];
+        var preimage = circuit.wires[String(circuit.wires.length - circuit.output_sizes[0])].settings_preimages[setting];
         output_preimages.push(preimage);
         var message_to_vicky = {
             program: "size checker",
@@ -310,20 +310,20 @@ if ($('.size_checker_program')) {
         console.log("remember, the function returns true if the second number is bigger than the first number");
         initial_commitment_preimages.forEach((preimage_pair, index) => {
             if (index < 32) {
-                wires.push(bin_array_1[index]);
+                circuit.wires[index].setting = bin_array_1[index];
                 preimages_to_reveal.push(preimage_pair[bin_array_1[index]]);
             } else {
-                wires.push(bin_array_2[index - 32]);
+                circuit.wires[index].setting = bin_array_2[index - 32];
                 preimages_to_reveal.push(preimage_pair[bin_array_2[index - 32]]);
             }
         });
-        console.log("wires:", wires);
-        operations_array.forEach((operation) => {
-            eval(operation.gate.eval_string());
-            var output_wire = Number(operation.gate.output_wires[0]);
-            operation.output_preimages.forEach(
-                (output_preimage) => preimages_to_reveal.push(output_preimage[wires[output_wire]])
-            );
+
+        circuit.gates.forEach((gate) => {
+            eval(gate.eval_string());
+            gate.output_wires.forEach((wire_number) => {
+                var setting = circuit.wires[wire_number].setting;
+                preimages_to_reveal.push(circuit.wires[wire_number].settings_preimages[setting]);
+            });
         });
         var message_to_vicky = {
             msg_type: "results",

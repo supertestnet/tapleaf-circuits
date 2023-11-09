@@ -1,6 +1,6 @@
 programs["zero checker"] = {
     initialize: () => {
-        parseBristolString(circuit_bristol_zero_checker);
+        circuit.parseBristolString(circuit_bristol_zero_checker);
     },
     promise_prompt: (outputs, promise) => {
         var prompt = ``;
@@ -36,7 +36,7 @@ if ($('.zero_checker_program')) {
         $('.zero_checker_program').classList.remove("hidden");
         $('.home').classList.add("hidden");
         programs["zero checker"].initialize();
-        await setOperationsArray(false);
+        await setWiresPreimagesAndHashes(false);
         await generateBitCommitments();
     }
     $('.zero_checker_step_one_done').onclick = () => {
@@ -274,15 +274,16 @@ if ($('.zero_checker_program')) {
         var stringarr = string.split("");
         stringarr.forEach((item, index) => stringarr[index] = Number(item));
         initial_commitment_preimages.forEach((preimage_pair, index) => {
-            wires.push(stringarr[index]);
+            circuit.wires[String(index)].setting = stringarr[index];
             preimages_to_reveal.push(preimage_pair[stringarr[index]]);
         });
-        operations_array.forEach((operation) => {
-            eval(operation.gate.eval_string());
-            var output_wire = Number(operation.gate.output_wires[0]);
-            operation.output_preimages.forEach(
-                (output_preimage) => preimages_to_reveal.push(output_preimage[wires[output_wire]])
-            );
+        circuit.gates.forEach((gate) => {
+            eval(gate.eval_string());
+            gate.output_wires.forEach((wire_number) => {
+                var setting = circuit.wires[wire_number].setting;
+                console.log(setting);
+                preimages_to_reveal.push(circuit.wires[wire_number].settings_preimages[setting]);
+            });
         });
         var message_to_vicky = {
             msg_type: "results",

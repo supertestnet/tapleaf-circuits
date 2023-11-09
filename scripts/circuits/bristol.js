@@ -1,33 +1,38 @@
-var parseBristolString = (circuit_string) => {
-    circuit_splited = circuit_string.split(`\n`);
-    circuit_splited.forEach((entry, index) => {
-        circuit_splited[index] = circuit_splited[index].replace(/ +(?= )/g, "");
-        if (entry.startsWith(" ")) circuit_splited[index] = circuit_splited[index].substring(1);
+circuit.parseBristolString = function (bristol_string) {
+    this.init();
+    bristol_string_lines = bristol_string.split(`\n`);
+    bristol_string_lines.forEach((entry, index) => {
+        bristol_string_lines[index] = bristol_string_lines[index].replace(/ +(?= )/g, "");
+        if (entry.startsWith(" ")) bristol_string_lines[index] = bristol_string_lines[index].substring(1);
     });
-    if (!circuit_splited[0]) circuit_splited.splice(0, 1);
-    if (!circuit_splited[circuit_splited.length - 1]) circuit_splited.splice(circuit_splited.length - 1, 1);
-    if (circuit_splited[3]) alert("Oops, you entered an invalid bristol circuit_splited! Try again with the whole document, including the first three lines that define the number of gates, number of input bits, and number of output bits.");
-    number_of_preimages_to_expect = circuit_splited[0].split(" ").filter(item => item)[1];
-    number_of_preimages_to_expect = Number(number_of_preimages_to_expect);
-    number_of_numbers_being_passed_as_input = circuit_splited[1].split(" ").filter(item => item)[0];
-    number_of_numbers_being_passed_as_input = Number(number_of_numbers_being_passed_as_input);
-    number_of_inputs = circuit_splited[1].split(" ").filter(item => item)[1];
-    number_of_inputs = Number(number_of_inputs);
-    if (circuit_splited[1].split(" ").filter(item => item)[2]) number_of_inputs_2 = circuit_splited[1].split(" ").filter(item => item)[2];
-    if (number_of_inputs_2) number_of_inputs_2 = Number(number_of_inputs_2);
-    number_of_outputs = circuit_splited[2].split(" ").filter(item => item)[1];
-    number_of_outputs = Number(number_of_outputs);
-    circuit_splited.splice(0, 4);
-    circuit_splited.forEach((gate_string) => {
+    if (!bristol_string_lines[0]) bristol_string_lines.splice(0, 1);
+    if (!bristol_string_lines[bristol_string_lines.length - 1]) bristol_string_lines.splice(bristol_string_lines.length - 1, 1);
+    if (bristol_string_lines[3]) alert("Oops, you entered an invalid bristol circuit! Try again with the whole document, including the first three lines that define the number of gates, number of input bits, and number of output bits.");
+
+    var gates_and_wires_info_array = bristol_string_lines[0].split(" ").filter(item => item);
+    var inputs_info_array = bristol_string_lines[1].split(" ").filter(item => item);
+    number_of_numbers_being_passed_as_input = Number(inputs_info_array[0]);
+    var i = 0; for (i = 1; i <= number_of_numbers_being_passed_as_input; i++) {
+        this.input_sizes.push(Number(inputs_info_array[i]));
+    }
+
+    var outputs_info_array = bristol_string_lines[2].split(" ").filter(item => item);
+    number_of_numbers_as_output = Number(outputs_info_array[0]);
+    var i = 0; for (i = 1; i <= number_of_numbers_as_output; i++) {
+        this.output_sizes.push(Number(outputs_info_array[i]));
+    }
+
+    bristol_string_lines.splice(0, 4);
+    bristol_string_lines.forEach((gate_string) => {
         gate_array = gate_string.split(" ").filter(item => item);
         gate = {
             name: gate_array[gate_array.length - 1],
             input_wires: [],
             output_wires: [],
             eval_string: function () {
-                eval_string = `wires[ ${this.output_wires[0]} ] = ${this.name}( `;
+                eval_string = `circuit.wires[ ${this.output_wires[0]} ].setting = ${this.name}( `;
                 this.input_wires.forEach((wire, index) => {
-                    eval_string += `wires[ ${wire} ]`;
+                    eval_string += `circuit.wires[ ${wire} ].setting`;
                     if (index != this.input_wires.length - 1) eval_string += ", ";
                 });
                 eval_string += " )";
@@ -43,6 +48,29 @@ var parseBristolString = (circuit_string) => {
             gate.output_wires.push(gate_array[4]);
         }
 
-        circuit.push(gate);
+        gate.input_wires.forEach((wire_number) => {
+            this.wires[wire_number] = {
+                setting: null,
+                settings_preimages: [],
+                settings_hashes: [],
+            };
+        });
+
+        gate.output_wires.forEach((wire_number) => {
+            this.wires[wire_number] = {
+                setting: null,
+                settings_preimages: [],
+                settings_hashes: [],
+            };
+        });
+
+        this.gates.push(gate);
     });
+
+    var expected_gates_count = gates_and_wires_info_array[0];
+    var expected_wires_count = gates_and_wires_info_array[1];
+    if ((expected_gates_count != this.gates.length) || (expected_wires_count != this.wires.length)) {
+        alert("Invalid bristol circuit :( it doesn't have the expected wires or gates!");
+        this.init();
+    }
 }
