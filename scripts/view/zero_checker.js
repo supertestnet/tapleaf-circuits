@@ -281,7 +281,6 @@ if ($('.zero_checker_program')) {
             eval(gate.eval_string());
             gate.output_wires.forEach((wire_number) => {
                 var setting = circuit.wires[wire_number].setting;
-                console.log(setting);
                 preimages_to_reveal.push(circuit.wires[wire_number].settings_preimages[setting]);
             });
         });

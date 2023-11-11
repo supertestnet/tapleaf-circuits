@@ -58,7 +58,6 @@ var starter_amt = null;
 var presigned_tx_sigs = {}
 var earnings_txhex = null;
 var preimages_to_reveal = [];
-var wires = [];
 var promise = null;
 var challenge_scripts = [];
 
@@ -75,4 +74,3 @@ var to_challenge_vout = null;
 var to_challenge_amt = null;
 var program = null;
 var pauls_promise = null;
-var map_wire_to_commitment_index = [];
