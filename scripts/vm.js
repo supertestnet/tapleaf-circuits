@@ -63,6 +63,7 @@ var OP_XOR = async (first_input_preimage, first_expected_input_hash, first_input
 }
 
 setWiresPreimagesAndHashes = async (isVerifier) => {
+    var map_wire_to_commitment_index = [];
     if (isVerifier) {
         circuit.gates.forEach((gate) => {
             gate.output_wires.forEach((wire_number) => map_wire_to_commitment_index.push(wire_number));
@@ -243,477 +244,140 @@ var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
     return anti_contradiction_address;
 }
 
-var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
-    var templates = {}
-    templates["OP_NOT_00"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NOT
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_NOT_01"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NOT
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_NOT_10"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NOT
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_NOT_11"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NOT
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_BOOLAND_000"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_BOOLAND
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_BOOLAND_001"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_BOOLAND
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_BOOLAND_010"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_BOOLAND
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_BOOLAND_011"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_BOOLAND
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_BOOLAND_100"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_BOOLAND
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_BOOLAND_101"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_BOOLAND
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_BOOLAND_110"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_BOOLAND
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_BOOLAND_111"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_BOOLAND
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_XOR_000"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_XOR_001"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_XOR_010"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_XOR_011"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_XOR_100"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_XOR_101"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_XOR_110"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_0
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
-    templates["OP_XOR_111"] = `
-        OP_TOALTSTACK
-        OP_SHA256
-        INSERT_FIRST_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_SWAP
-        OP_SHA256
-        INSERT_SECOND_INPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_FROMALTSTACK
-        OP_SHA256
-        INSERT_OUTPUT_HERE
-        OP_EQUALVERIFY
-        OP_1
-        OP_NUMNOTEQUAL
-        OP_VERIFY
-        ${verifierPubkey}
-        OP_CHECKSIG
-    `;
+var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
 
+    var gate_to_operation_map = {
+        "INV": "OP_NOT",
+        "AND": "OP_BOOLAND",
+        "XOR": "OP_NUMNOTEQUAL"
+    };
+
+    var tapleafGate = {
+        operation: gate_to_operation_map[gate.name],
+        inputs: [],
+        outputs: [],
+        addInput: function (value, hash) {
+            this.inputs.push({
+                value: value,
+                hash: hash,
+            });
+        },
+        addOutput: function (value, hash) {
+            this.outputs.push({
+                value: value,
+                hash: hash,
+            });
+        },
+        script: function () {
+            var script_template_1_input_1_output_gate = `
+                OP_TOALTSTACK
+                OP_SHA256
+                #INSERT_INPUT_1_HASH_HERE#
+                OP_EQUALVERIFY
+                OP_#INSERT_INPUT_1_VALUE_HERE#
+                #INSERT_OPERATION_HERE#
+                OP_FROMALTSTACK
+                OP_SHA256
+                #INSERT_OUTPUT_1_HASH_HERE#
+                OP_EQUALVERIFY
+                OP_#INSERT_OUTPUT_1_VALUE_HERE#
+                OP_NUMNOTEQUAL
+                OP_VERIFY
+                ${verifierPubkey}
+                OP_CHECKSIG
+            `;
+
+            var script_template_2_input_1_output_gate = `
+                OP_TOALTSTACK
+                OP_SHA256
+                #INSERT_INPUT_1_HASH_HERE#
+                OP_EQUALVERIFY
+                OP_#INSERT_INPUT_1_VALUE_HERE#
+                OP_SWAP
+                OP_SHA256
+                #INSERT_INPUT_2_HASH_HERE#
+                OP_EQUALVERIFY
+                OP_#INSERT_INPUT_2_VALUE_HERE#
+                #INSERT_OPERATION_HERE#
+                OP_FROMALTSTACK
+                OP_SHA256
+                #INSERT_OUTPUT_1_HASH_HERE#
+                OP_EQUALVERIFY
+                OP_#INSERT_OUTPUT_1_VALUE_HERE#
+                OP_NUMNOTEQUAL
+                OP_VERIFY
+                ${verifierPubkey}
+                OP_CHECKSIG
+            `;
+
+            if (gate.input_wires.length == 1 && gate.output_wires.length == 1) {
+                var script_template = script_template_1_input_1_output_gate;
+            } else if (gate.input_wires.length == 2 && gate.output_wires.length == 1) {
+                var script_template = script_template_2_input_1_output_gate;
+            }
+
+            script_template = script_template.replace("#INSERT_OPERATION_HERE#", this.operation);
+
+            this.inputs.forEach((input, index) => {
+                script_template = script_template.replace(`#INSERT_INPUT_${index + 1}_VALUE_HERE#`, input.value);
+                script_template = script_template.replace(`#INSERT_INPUT_${index + 1}_HASH_HERE#`, input.hash);
+            });
+
+            this.outputs.forEach((output, index) => {
+                script_template = script_template.replace(`#INSERT_OUTPUT_${index + 1}_VALUE_HERE#`, output.value);
+                script_template = script_template.replace(`#INSERT_OUTPUT_${index + 1}_HASH_HERE#`, output.hash);
+            });
+
+            script_array = script_template.replaceAll("\n\n", "\n").replaceAll(" ", "").split("\n");
+            script_array.splice(0, 1);
+            script_array.splice(script_array.length - 1, 1);
+
+            return script_array;
+        }
+    };
+
+    return tapleafGate;
+}
+
+var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
     challenge_scripts = [];
 
     circuit.gates.forEach((gate) => {
-        var filled_in_templates = [];
-        if (gate.name == "INV") {
-            var input_hash_pair = circuit.wires[gate.input_wires[0]].settings_hashes;
-            var output_hash_pair = circuit.wires[gate.output_wires[0]].settings_hashes;
-            filled_in_templates.push(
-                templates["OP_NOT_00"].replace("INSERT_INPUT_HERE", input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_NOT_01"].replace("INSERT_INPUT_HERE", input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_NOT_10"].replace("INSERT_INPUT_HERE", input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_NOT_11"].replace("INSERT_INPUT_HERE", input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1])
-            );
-        } else if (gate.name == "AND") {
-            var first_input_hash_pair = circuit.wires[gate.input_wires[0]].settings_hashes;
-            var second_input_hash_pair = circuit.wires[gate.input_wires[1]].settings_hashes;
-            var output_hash_pair = circuit.wires[gate.output_wires[0]].settings_hashes;
-            filled_in_templates.push(
-                templates["OP_BOOLAND_000"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_BOOLAND_001"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_BOOLAND_010"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_BOOLAND_011"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_BOOLAND_100"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_BOOLAND_101"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_BOOLAND_110"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_BOOLAND_111"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-            );
-        } else if (gate.name == "XOR") {
-            var first_input_hash_pair = circuit.wires[gate.input_wires[0]].settings_hashes;
-            var second_input_hash_pair = circuit.wires[gate.input_wires[1]].settings_hashes;
-            var output_hash_pair = circuit.wires[gate.output_wires[0]].settings_hashes;
-            filled_in_templates.push(
-                templates["OP_XOR_000"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_XOR_001"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_XOR_010"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_XOR_011"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[0]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_XOR_100"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_XOR_101"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[0]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-                templates["OP_XOR_110"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[0]),
-                templates["OP_XOR_111"].replace("INSERT_FIRST_INPUT_HERE", first_input_hash_pair[1]).replace("INSERT_SECOND_INPUT_HERE", second_input_hash_pair[1]).replace("INSERT_OUTPUT_HERE", output_hash_pair[1]),
-            );
+        tapleafGate = makeTapleafGateFromCircuitGate(gate, verifierPubkey);
+
+        var generateAllPossibleSettings = function (array, length, settings = []) {
+            if (length == 0) {
+                return array.push(settings);
+            }
+            generateAllPossibleSettings(array, length - 1, settings.concat(0));
+            generateAllPossibleSettings(array, length - 1, settings.concat(1));
         }
 
-        filled_in_templates.forEach(template => {
-            var leaf = template.replaceAll("\n\n", "\n").replaceAll(" ", "").split("\n");
-            leaf.splice(0, 1);
-            leaf.splice(leaf.length - 1, 1);
-            challenge_scripts.push(leaf);
+        allPossibleInputSettings = [];
+        generateAllPossibleSettings(allPossibleInputSettings, gate.input_wires.length);
+
+        allPossibleOutputSettings = [];
+        generateAllPossibleSettings(allPossibleOutputSettings, gate.output_wires.length);
+
+        allPossibleInputSettings.forEach((possible_inputs) => {
+            allPossibleOutputSettings.forEach((possible_outputs) => {
+
+                tapleafGate.inputs = [];
+                gate.input_wires.forEach((wire_number, index) => {
+                    var possible_setting = possible_inputs[index];
+                    var hash_pair = circuit.wires[wire_number].settings_hashes;
+                    tapleafGate.addInput(possible_setting, hash_pair[possible_setting]);
+                });
+
+                tapleafGate.outputs = [];
+                gate.output_wires.forEach((wire_number, index) => {
+                    var possible_setting = possible_outputs[index];
+                    var hash_pair = circuit.wires[wire_number].settings_hashes;
+                    tapleafGate.addOutput(possible_setting, hash_pair[possible_setting]);
+                });
+
+                challenge_scripts.push(tapleafGate.script());
+            });
         });
     });
 
