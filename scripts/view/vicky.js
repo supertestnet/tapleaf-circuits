@@ -4,22 +4,22 @@ function getFile(input) {
     }
 }
 
-async function handleBrokenPromise(i_can_spend, failed_operation, selected_script) {
+async function handleBrokenPromise(tapleafGate) {
+    var selected_script = tapleafGate.script();
     var tree = challenge_scripts.map(s => tapscript.Tap.encodeScript(s));
     var target = tapscript.Tap.encodeScript(selected_script);
     var pubkey = "ab".repeat(32);
     var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target });
-    var split_string = i_can_spend.split(" ");
+
     //the order they should go in is: output first, so it can be moved to the altstack;
     //then input 1, as it is processed first; then input 2, as it is processed next. And so on.
     var preimages = [];
-    if (failed_operation == "OP_NOT") {
-        preimages = [split_string[6], split_string[12]];
-    } else if (failed_operation == "OP_BOOLAND") {
-        preimages = [split_string[12], split_string[6], split_string[17]];
-    } else if (failed_operation == "OP_XOR") {
-        preimages = [split_string[12], split_string[6], split_string[17]]
-    }
+    tapleafGate.outputs.forEach((output) => {
+        preimages.push(output.preimage);
+    });
+    tapleafGate.inputs.forEach((input) => {
+        preimages.push(input.preimage);
+    });
     var destino = $('.vickys_bitcoin_address').value;
     if (!destino) destino = prompt(`Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go`);
     var txdata = tapscript.Tx.create({
@@ -88,64 +88,23 @@ async function handleResult(json) {
     to_challenge_amt = starter_amt - 500;
     json["preimages_to_reveal"].forEach(item => preimages_from_paul.push(item));
     preimages_from_paul = removeDuplicates(preimages_from_paul);
-    discardUnusedPreimages();
+
     //todo: actually give Vicky a transaction to broadcast here
     if (preimages_from_paul.length < circuit.wires.length) return alert("oh no! Go put your counterparty’s money in the bit commitment address!");
     //todo: also give Vicky a transaction to broadcast if Paul doesn't do his bit commitments in time
     //todo: also make the circuits reusable so that Vicky and Paul don't force close in every transaction
-    var preimages_and_their_tapleaves = [];
-    var i; for (i = 0; i < preimages_from_paul.length; i++) {
-        var preimage = preimages_from_paul[i];
-        var tapleaves_it_is_in = await compareTapleaves(preimage, challenge_scripts);
-        preimages_and_their_tapleaves.push(tapleaves_it_is_in);
-    }
-    expanded_array = [];
-    circuit.gates.forEach(gate => {
-        if (gate.name == "INV") expanded_array.push(["OP_NOT"], ["OP_NOT"], ["OP_NOT"], ["OP_NOT"]);
-        if (gate.name == "AND") expanded_array.push(["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"], ["OP_BOOLAND"]);
-        if (gate.name == "XOR") expanded_array.push(["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"], ["OP_XOR"]);
-    });
-    expanded_array.push("multisig");
-    preimages_and_their_tapleaves.forEach((preimage, index) => {
-        preimage.forEach(num => {
-            expanded_array[num].push(preimages_from_paul[index]);
-        });
-    });
-    var operation_index; for (operation_index = 0; operation_index < expanded_array.length; operation_index++) {
-        var item = expanded_array[operation_index];
-        if (!((item[0] == "OP_NOT" && item.length == 3) || (["OP_BOOLAND", "OP_XOR"].indexOf(item[0]) > -1 && item.length == 4))) continue;
-        var hash_order = [];
-        challenge_scripts[operation_index].forEach(element => {
-            if (element.length == 64) hash_order.push(element);
-        });
-        var preimages_in_order = [];
-        var index; for (index = 0; index < expanded_array[operation_index].length; index++) {
-            var preimage = expanded_array[operation_index][index];
-            if (index) {
-                var hash = await sha256(hexToBytes(preimage));
-                hash_order.forEach((ordered_hash, hash_index) => {
-                    if (ordered_hash == hash) preimages_in_order[hash_index] = preimage;
-                });
-            }
-        }
-        expanded_array[operation_index] = [item[0], ...preimages_in_order];
-    }
-    var index; for (index = 0; index < expanded_array.length; index++) {
-        var item = expanded_array[index];
-        if (item[0] == "OP_NOT" && item.length == 3) {
-            var i_can_spend = await OP_NOT(item[1], challenge_scripts[index][2], Number(challenge_scripts[index][4].substring(challenge_scripts[index][4].length - 1)), item[2], challenge_scripts[index][8], Number(challenge_scripts[index][10].substring(challenge_scripts[index][10].length - 1)));
-        }
-        else if (item[0] == "OP_BOOLAND" && item.length == 4) {
-            var i_can_spend = await OP_BOOLAND(item[1], challenge_scripts[index][2], Number(challenge_scripts[index][4].substring(challenge_scripts[index][4].length - 1)), item[2], challenge_scripts[index][7], Number(challenge_scripts[index][9].substring(challenge_scripts[index][9].length - 1)), item[3], challenge_scripts[index][13], Number(challenge_scripts[index][15].substring(challenge_scripts[index][15].length - 1)));
-        }
-        else if (item[0] == "OP_XOR" && item.length == 4) {
-            var i_can_spend = await OP_XOR(item[1], challenge_scripts[index][2], Number(challenge_scripts[index][4].substring(challenge_scripts[index][4].length - 1)), item[2], challenge_scripts[index][7], Number(challenge_scripts[index][9].substring(challenge_scripts[index][9].length - 1)), item[3], challenge_scripts[index][13], Number(challenge_scripts[index][15].substring(challenge_scripts[index][15].length - 1)));
-        }
+    for (const preimage of preimages_from_paul) {
+        var hash = await sha256(hexToBytes(preimage));
+        for (const tapleafGate of tapleaf_gates) {
+            tapleafGate.tryAddingPreimage(preimage, hash);
+        };
+    };
 
-        if (i_can_spend && i_can_spend.startsWith("you can spend")) {
-            return await handleBrokenPromise(i_can_spend, item[0], challenge_scripts[index]);
+    for (const tapleafGate of tapleaf_gates) {
+        if (tapleafGate.isSpendable()) {
+            return await handleBrokenPromise(tapleafGate);
         }
-    }
+    };
 
     // If we get here, paul has kept his promise!
 

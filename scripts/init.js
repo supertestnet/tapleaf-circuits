@@ -60,6 +60,7 @@ var earnings_txhex = null;
 var preimages_to_reveal = [];
 var promise = null;
 var challenge_scripts = [];
+var tapleaf_gates = [];
 
 // Vicky
 

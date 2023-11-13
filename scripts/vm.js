@@ -3,65 +3,6 @@ function removeDuplicates(arr) {
     return copy.filter((item, index) => copy.indexOf(item) === index);
 }
 
-var compareTapleaves = async (preimage, challenge_scripts) => {
-    var scripts_this_preimage_is_referenced_in = [];
-    var hash = await sha256(hexToBytes(preimage));
-    challenge_scripts.forEach((script, index) => {
-        script.forEach(element => {
-            if (element == hash) scripts_this_preimage_is_referenced_in.push(index);
-        });
-    });
-    return scripts_this_preimage_is_referenced_in;
-}
-
-var discardUnusedPreimages = async () => {
-    var i; for (i = 0; i < preimages_from_paul.length; i++) {
-        var preimage = preimages_from_paul[i];
-        var tapleaves_it_is_in = await compareTapleaves(preimage, challenge_scripts);
-        if (tapleaves_it_is_in.length) continue;
-        preimages_from_paul.splice(i, 1);
-        i = i - 1;
-    }
-}
-
-var OP_NOT = async (input_preimage, expected_input_hash, input_value, output_preimage, expected_output_hash, output_value) => {
-    var real_input_hash = await sha256(hexToBytes(input_preimage));
-    if (real_input_hash != expected_input_hash) return `you cannot spend with this tapleaf`;
-    var input_bit = input_value;
-    input_bit = Number(!input_bit);
-    var real_output_hash = await sha256(hexToBytes(output_preimage));
-    if (real_output_hash != expected_output_hash) return `you cannot spend with this tapleaf`;
-    var output_bit = output_value;
-    if (input_bit != output_bit) return `you can spend with these preimages: ${input_preimage} as the input preimage and ${output_preimage} as the output preimage`;
-    return `you cannot spend with this tapleaf`;
-}
-
-var OP_BOOLAND = async (first_input_preimage, first_expected_input_hash, first_input_value, second_input_preimage, second_expected_input_hash, second_input_value, output_preimage, expected_output_hash, output_value) => {
-    var real_first_input_hash = await sha256(hexToBytes(first_input_preimage));
-    if (real_first_input_hash != first_expected_input_hash) return `you cannot spend with this tapleaf`;
-    var real_second_input_hash = await sha256(hexToBytes(second_input_preimage));
-    if (real_second_input_hash != second_expected_input_hash) return `you cannot spend with this tapleaf`;
-    var comparison_bit = Number(first_input_value && second_input_value);
-    var real_output_hash = await sha256(hexToBytes(output_preimage));
-    if (real_output_hash != expected_output_hash) return `you cannot spend with this tapleaf`;
-    var output_bit = output_value;
-    if (comparison_bit != output_bit) return `you can spend with these preimages: ${first_input_preimage} as the first input preimage, ${second_input_preimage} as the second, and ${output_preimage} as the output preimage`;
-    return `you cannot spend with this tapleaf`;
-}
-
-var OP_XOR = async (first_input_preimage, first_expected_input_hash, first_input_value, second_input_preimage, second_expected_input_hash, second_input_value, output_preimage, expected_output_hash, output_value) => {
-    var real_first_input_hash = await sha256(hexToBytes(first_input_preimage));
-    if (real_first_input_hash != first_expected_input_hash) return `you cannot spend with this tapleaf`;
-    var real_second_input_hash = await sha256(hexToBytes(second_input_preimage));
-    if (real_second_input_hash != second_expected_input_hash) return `you cannot spend with this tapleaf`;
-    var comparison_bit = Number(first_input_value ^ second_input_value);
-    var real_output_hash = await sha256(hexToBytes(output_preimage));
-    if (real_output_hash != expected_output_hash) return `you cannot spend with this tapleaf`;
-    var output_bit = output_value;
-    if (comparison_bit != output_bit) return `you can spend with these preimages: ${first_input_preimage} as the first input preimage, ${second_input_preimage} as the second, and ${output_preimage} as the output preimage`;
-    return `you cannot spend with this tapleaf`;
-}
-
 setWiresPreimagesAndHashes = async (isVerifier) => {
     var map_wire_to_commitment_index = [];
     if (isVerifier) {
@@ -246,27 +187,52 @@ var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
 
 var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
 
-    var gate_to_operation_map = {
-        "INV": "OP_NOT",
-        "AND": "OP_BOOLAND",
-        "XOR": "OP_NUMNOTEQUAL"
-    };
-
-    var tapleafGate = {
-        operation: gate_to_operation_map[gate.name],
+    return {
+        gate: gate,
         inputs: [],
         outputs: [],
         addInput: function (value, hash) {
             this.inputs.push({
                 value: value,
                 hash: hash,
+                preimage: "",
             });
         },
         addOutput: function (value, hash) {
             this.outputs.push({
                 value: value,
                 hash: hash,
+                preimage: "",
             });
+        },
+        tryAddingPreimage: async function (potential_preimage, potential_hash) {
+            var i; for (i = 0; i < this.inputs.length; i++) {
+                if (this.inputs[i].hash == potential_hash) {
+                    this.inputs[i].preimage = potential_preimage;
+                }
+            }
+
+            var i; for (i = 0; i < this.outputs.length; i++) {
+                if (this.outputs[i].hash == potential_hash) {
+                    this.outputs[i].preimage = potential_preimage;
+                }
+            }
+        },
+        isSpendable: function () {
+            var wires = [...this.inputs, ...this.outputs];
+            var i; for (i = 0; i < wires.length; i++) {
+                if (wires[i].preimage.length == 0) return false;
+            };
+            var evaluation = -1;
+            eval_string = `evaluation = ${this.gate.name}( `;
+            this.inputs.forEach((wire, index) => {
+                eval_string += `${wire.value}`;
+                if (index != this.inputs.length - 1) eval_string += ", ";
+            });
+            eval_string += " )";
+            eval(eval_string);
+            // TODO: adjust this for multiple outputs
+            return (evaluation != this.outputs[0].value);
         },
         script: function () {
             var script_template_1_input_1_output_gate = `
@@ -316,7 +282,7 @@ var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
                 var script_template = script_template_2_input_1_output_gate;
             }
 
-            script_template = script_template.replace("#INSERT_OPERATION_HERE#", this.operation);
+            script_template = script_template.replace("#INSERT_OPERATION_HERE#", this.gate.operation());
 
             this.inputs.forEach((input, index) => {
                 script_template = script_template.replace(`#INSERT_INPUT_${index + 1}_VALUE_HERE#`, input.value);
@@ -335,15 +301,13 @@ var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
             return script_array;
         }
     };
-
-    return tapleafGate;
 }
 
 var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
+    tapleaf_gates = [];
     challenge_scripts = [];
 
     circuit.gates.forEach((gate) => {
-        tapleafGate = makeTapleafGateFromCircuitGate(gate, verifierPubkey);
 
         var generateAllPossibleSettings = function (array, length, settings = []) {
             if (length == 0) {
@@ -362,20 +326,21 @@ var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
         allPossibleInputSettings.forEach((possible_inputs) => {
             allPossibleOutputSettings.forEach((possible_outputs) => {
 
-                tapleafGate.inputs = [];
+                var tapleafGate = makeTapleafGateFromCircuitGate(gate, verifierPubkey);
+
                 gate.input_wires.forEach((wire_number, index) => {
                     var possible_setting = possible_inputs[index];
                     var hash_pair = circuit.wires[wire_number].settings_hashes;
                     tapleafGate.addInput(possible_setting, hash_pair[possible_setting]);
                 });
 
-                tapleafGate.outputs = [];
                 gate.output_wires.forEach((wire_number, index) => {
                     var possible_setting = possible_outputs[index];
                     var hash_pair = circuit.wires[wire_number].settings_hashes;
                     tapleafGate.addOutput(possible_setting, hash_pair[possible_setting]);
                 });
 
+                tapleaf_gates.push(tapleafGate);
                 challenge_scripts.push(tapleafGate.script());
             });
         });

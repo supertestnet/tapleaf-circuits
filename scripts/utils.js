@@ -19,10 +19,6 @@ function bytesToHex(bytes) {
 
 var getRand = size => bytesToHex(crypto.getRandomValues(new Uint8Array(size)));
 
-var AND = (a, b) => Number(a && b);
-var XOR = (a, b) => Number(a ^ b);
-var INV = (a) => Number(!a);
-
 var reverseString = s => s.match(/.{1}/g).reverse().join('');
 
 var waitSomeSeconds = num => {
@@ -47,4 +43,16 @@ function readFileContent(file) {
         reader.onerror = error => reject(error);
         reader.readAsText(file);
     })
+}
+
+function saveDataToFile(data, fileName) {
+    var a = document.createElement("a");
+    document.body.appendChild(a);
+    a.style = "display: none";
+    var blob = new Blob([data], { type: "octet/stream" }),
+        url = window.URL.createObjectURL(blob);
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    window.URL.revokeObjectURL(url);
 }

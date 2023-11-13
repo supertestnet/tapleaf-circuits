@@ -73,7 +73,7 @@ if ($('.size_checker_program')) {
             subsequent_commitment_hashes,
             output_preimages
         }
-        saveData(JSON.stringify(message_to_vicky), "promise_file.txt");
+        saveDataToFile(JSON.stringify(message_to_vicky), "promise_file.txt");
     }
     $('.size_checker_step_two_done').onclick = () => {
         $('.size_checker_step_one').classList.add("hidden");
@@ -337,7 +337,7 @@ if ($('.size_checker_program')) {
         }
         alert(`You are about to be prompted to download a file called results_file.txt. Do so and send it to Vicky.`);
         var blockheight = await getBlockheight("");
-        saveData(JSON.stringify(message_to_vicky), "results_file.txt");
+        saveDataToFile(JSON.stringify(message_to_vicky), "results_file.txt");
         $('.size_checker_step_six').innerHTML = `<p>After 10 blocks (so in block <span class="current_blockheight">${blockheight + 11}</span>) <a href="https://mutinynet.com/tx/push" target="_blank">go here</a> and broadcast this tx to collect your money if you sent the right data to Vicky (otherwise, expect Vicky to take your money):</p><p>${earnings_txhex}</p><p>While you wait, you can view the current blockheight here: <a href="https://mutinynet.com" target="_blank">https://mutinynet.com</a> (mutinynet is a bitcoin testnet where blocks arrive about every 30 seconds).</p>`;
     }
     $('.size_checker_program .vickys_key').value = "";

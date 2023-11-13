@@ -29,6 +29,14 @@ circuit.parseBristolString = function (bristol_string) {
             name: gate_array[gate_array.length - 1],
             input_wires: [],
             output_wires: [],
+            operation: function () {
+                var gate_to_operation_map = {
+                    "INV": "OP_NOT",
+                    "AND": "OP_BOOLAND",
+                    "XOR": "OP_NUMNOTEQUAL"
+                };
+                return gate_to_operation_map[this.name];
+            },
             eval_string: function () {
                 eval_string = `circuit.wires[ ${this.output_wires[0]} ].setting = ${this.name}( `;
                 this.input_wires.forEach((wire, index) => {
@@ -74,3 +82,7 @@ circuit.parseBristolString = function (bristol_string) {
         this.init();
     }
 }
+
+var AND = (a, b) => Number(a && b);
+var XOR = (a, b) => Number(a ^ b);
+var INV = (a) => Number(!a);
