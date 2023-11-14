@@ -95,14 +95,14 @@ async function handleResult(json) {
     //todo: also make the circuits reusable so that Vicky and Paul don't force close in every transaction
     for (const preimage of preimages_from_paul) {
         var hash = await sha256(hexToBytes(preimage));
-        for (const tapleafGate of tapleaf_gates) {
-            tapleafGate.tryAddingPreimage(preimage, hash);
+        var i; for (i = 0; i < tapleaf_gates.length; i++) {
+            tapleaf_gates[i].tryAddingPreimage(preimage, hash);
         };
     };
 
-    for (const tapleafGate of tapleaf_gates) {
-        if (tapleafGate.isSpendable()) {
-            return await handleBrokenPromise(tapleafGate);
+    var i; for (i = 0; i < tapleaf_gates.length; i++) {
+        if (tapleaf_gates[i].isSpendable()) {
+            return await handleBrokenPromise(tapleaf_gates[i]);
         }
     };
 
