@@ -32,6 +32,7 @@ circuit.parseBristolString = function (bristol_string) {
             operation: function () {
                 var gate_to_operation_map = {
                     "INV": "OP_NOT",
+                    "OR": "OP_BOOLOR",
                     "AND": "OP_BOOLAND",
                     "XOR": "OP_NUMNOTEQUAL"
                 };
@@ -51,7 +52,7 @@ circuit.parseBristolString = function (bristol_string) {
         if (gate.name == "INV") {
             gate.input_wires.push(gate_array[2]);
             gate.output_wires.push(gate_array[3]);
-        } else if (["AND", "XOR"].indexOf(gate.name) > -1) {
+        } else if (["OR", "AND", "XOR"].indexOf(gate.name) > -1) {
             gate.input_wires.push(gate_array[2], gate_array[3]);
             gate.output_wires.push(gate_array[4]);
         }
@@ -83,6 +84,7 @@ circuit.parseBristolString = function (bristol_string) {
     }
 }
 
+var OR = (a, b) => Number(a || b);
 var AND = (a, b) => Number(a && b);
 var XOR = (a, b) => Number(a ^ b);
 var INV = (a) => Number(!a);
