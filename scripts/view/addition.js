@@ -34,7 +34,7 @@ if ($('.addition_program')) {
         $('.addition_program').classList.remove("hidden");
         $('.home').classList.add("hidden");
         programs["addition"].initialize();
-        await setWiresPreimagesAndHashes(false);
+        await circuit.setWiresPreimagesAndHashes();
         await generateBitCommitments();
     }
     $('.addition_step_one_done').onclick = () => {

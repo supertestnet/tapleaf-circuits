@@ -9,14 +9,6 @@ for (var key of url_keys) $_GET[key] = url_params.get(key);
 
 var network = "testnet";
 if ($_GET["network"] == "regtest") network = "regtest";
-circuit = {
-    init: function () {
-        this.gates = [];
-        this.wires = [];
-        this.input_sizes = [];
-        this.output_sizes = [];
-    },
-};
 var programs = {};
 var initial_commitment_preimages = [];
 var initial_commitment_hashes = [];

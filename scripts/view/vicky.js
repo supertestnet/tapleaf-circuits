@@ -108,7 +108,7 @@ async function handleResult(json) {
 
     // If we get here, paul has kept his promise!
 
-    var r = await runCircuitAndGetInputAndOutputs();
+    var r = await circuit.runAndGetInputAndOutputs();
     var prompt = programs[program].promise_kept_prompt(r.inputs, r.outputs, pauls_promise);
     alert(prompt);
 }
@@ -125,7 +125,7 @@ async function handlePromise(json) {
     anti_contradiction_address = generateAntiContradictionAddress(pauls_key, pubkey);
     funding_address = generateFundingAddress(pauls_key, pubkey);
     programs[program].initialize();
-    await setWiresPreimagesAndHashes(true);
+    await circuit.setWiresPreimagesAndHashes();
     //Vicky needs to take json[ "output_preimages" ] and add it to
     //preimages_from_paul, but only if she sees that it actually corresponds
     //to the hashes in the last n wires, n being the number of output wires

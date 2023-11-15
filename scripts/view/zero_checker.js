@@ -36,7 +36,7 @@ if ($('.zero_checker_program')) {
         $('.zero_checker_program').classList.remove("hidden");
         $('.home').classList.add("hidden");
         programs["zero checker"].initialize();
-        await setWiresPreimagesAndHashes(false);
+        await circuit.setWiresPreimagesAndHashes();
         await generateBitCommitments();
     }
     $('.zero_checker_step_one_done').onclick = () => {

@@ -30,7 +30,7 @@ if ($('.shifter_program')) {
         $('.shifter_program').classList.remove("hidden");
         $('.home').classList.add("hidden");
         programs["shifter"].initialize();
-        await setWiresPreimagesAndHashes(false);
+        await circuit.setWiresPreimagesAndHashes();
         await generateBitCommitments();
     }
     $('.shifter_step_one_done').onclick = () => {
