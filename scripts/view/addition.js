@@ -53,7 +53,7 @@ if ($('.addition_program')) {
         bin_array.forEach((item, index) => bin_array[index] = Number(item));
         var output_preimages = [];
         var i; for (i = circuit.wires.length - circuit.output_sizes[0]; i < circuit.wires.length; i++) {
-            var preimage = circuit.wires[String(i)].settings_preimages[bin_array[(i - circuit.wires.length) + circuit.output_sizes[0]]];
+            var preimage = circuit.wires[i].settings_preimages[bin_array[(i - circuit.wires.length) + circuit.output_sizes[0]]];
             // console.log( i, ( i - circuit.wires.length ) + circuit.output_sizes[0], preimage );
             output_preimages.push(preimage);
         }

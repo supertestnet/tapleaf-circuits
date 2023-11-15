@@ -50,11 +50,11 @@ circuit.parseBristolString = function (bristol_string) {
         };
 
         if (gate.name == "INV") {
-            gate.input_wires.push(gate_array[2]);
-            gate.output_wires.push(gate_array[3]);
+            gate.input_wires.push(Number(gate_array[2]));
+            gate.output_wires.push(Number(gate_array[3]));
         } else if (["OR", "AND", "XOR"].indexOf(gate.name) > -1) {
-            gate.input_wires.push(gate_array[2], gate_array[3]);
-            gate.output_wires.push(gate_array[4]);
+            gate.input_wires.push(Number(gate_array[2]), Number(gate_array[3]));
+            gate.output_wires.push(Number(gate_array[4]));
         }
 
         gate.input_wires.forEach((wire_number) => {

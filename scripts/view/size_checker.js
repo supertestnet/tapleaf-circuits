@@ -63,7 +63,7 @@ if ($('.size_checker_program')) {
         //than or equal to" the second number, which is the same thing as
         //returning false if the first number is "bigger"
         var setting = $('.big_or_not').value.toLowerCase() == "bigger" ? 0 : 1;
-        var preimage = circuit.wires[String(circuit.wires.length - circuit.output_sizes[0])].settings_preimages[setting];
+        var preimage = circuit.wires[circuit.wires.length - circuit.output_sizes[0]].settings_preimages[setting];
         output_preimages.push(preimage);
         var message_to_vicky = {
             program: "size checker",

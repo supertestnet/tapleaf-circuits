@@ -274,7 +274,7 @@ if ($('.zero_checker_program')) {
         var stringarr = string.split("");
         stringarr.forEach((item, index) => stringarr[index] = Number(item));
         initial_commitment_preimages.forEach((preimage_pair, index) => {
-            circuit.wires[String(index)].setting = stringarr[index];
+            circuit.wires[index].setting = stringarr[index];
             preimages_to_reveal.push(preimage_pair[stringarr[index]]);
         });
         circuit.gates.forEach((gate) => {

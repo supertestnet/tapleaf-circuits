@@ -46,8 +46,8 @@ setWiresPreimagesAndHashes = async (isVerifier) => {
 var generateBitCommitments = async () => {
     var sum_of_all_input_sizes = circuit.input_sizes.reduce((ac, c) => ac + c, 0);
     var i; for (i = 0; i < sum_of_all_input_sizes; i++) {
-        initial_commitment_preimages.push(circuit.wires[String(i)].settings_preimages);
-        initial_commitment_hashes.push(circuit.wires[String(i)].settings_hashes);
+        initial_commitment_preimages.push(circuit.wires[i].settings_preimages);
+        initial_commitment_hashes.push(circuit.wires[i].settings_hashes);
     }
 
     circuit.gates.forEach((gate) => {
