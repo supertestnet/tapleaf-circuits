@@ -41,7 +41,7 @@ if ($('.shifter_program')) {
     $('.submit_shifted_num').onclick = () => {
         promise = Number($('.shifted_num').value);
         var binary = promise.toString(2);
-        binary = "0".repeat(3 - binary.length) + binary;
+        binary = "0".repeat(32 - binary.length) + binary;
         bin_array = binary.split("")
         bin_array.forEach((item, index) => bin_array[index] = Number(item));
         var output_preimages = [];
@@ -267,7 +267,7 @@ if ($('.shifter_program')) {
     $('.shifter_step_six_done').onclick = async () => {
         var num1 = Number($('.shifter_original_num').value);
         var binary = num1.toString(2);
-        binary = "0".repeat(3 - binary.length) + binary;
+        binary = "0".repeat(32 - binary.length) + binary;
         bin_array_1 = binary.split("");
         bin_array_1.forEach((item, index) => bin_array_1[index] = Number(item));
         var control_string = $('.left_or_right').value;
