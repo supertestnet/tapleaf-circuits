@@ -1,9 +1,3 @@
-function getFile(input) {
-    if ('files' in input && input.files.length > 0) {
-        handleContent(input.files[0]);
-    }
-}
-
 async function handleBrokenPromise(tapleafGate) {
     var selected_script = tapleafGate.script();
     var tree = challenge_scripts.map(s => tapscript.Tap.encodeScript(s));
@@ -178,6 +172,12 @@ async function handlePromise(json) {
     $('.address_verification_div').classList.remove("hidden");
     $('#uploader_div').classList.add("hidden");
     document.getElementsByClassName("box")[0].classList.add("is-success");
+}
+
+function getFile(input) {
+    if ('files' in input && input.files.length > 0) {
+        handleContent(input.files[0]);
+    }
 }
 
 function handleContent(file) {
