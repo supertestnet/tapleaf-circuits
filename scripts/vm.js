@@ -1,8 +1,3 @@
-function removeDuplicates(arr) {
-    var copy = JSON.parse(JSON.stringify(arr));
-    return copy.filter((item, index) => copy.indexOf(item) === index);
-}
-
 setWiresPreimagesAndHashes = async (isVerifier) => {
     var map_wire_to_commitment_index = [];
     if (isVerifier) {
