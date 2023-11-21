@@ -87,16 +87,26 @@ async function handleResult(json) {
     if (preimages_from_paul.length < circuit.wires.length) return alert("oh no! Go put your counterparty’s money in the bit commitment address!");
     //todo: also give Vicky a transaction to broadcast if Paul doesn't do his bit commitments in time
     //todo: also make the circuits reusable so that Vicky and Paul don't force close in every transaction
+
+    // Note: since we don't do bisection yet, we only check for the output gates
+    var output_tapleaf_gates = [];
+    var minimum_output_wire_number = circuit.wires.length - circuit.output_sizes[0];
+    var i; for (i = 0; i < tapleaf_gates.length; i++) {
+        if (tapleaf_gates[i].gate.output_wires.reduce((ac, c) => ac || c >= minimum_output_wire_number, false)) {
+            output_tapleaf_gates.push(tapleaf_gates[i]);
+        }
+    }
+
     for (const preimage of preimages_from_paul) {
         var hash = await sha256(hexToBytes(preimage));
-        var i; for (i = 0; i < tapleaf_gates.length; i++) {
-            tapleaf_gates[i].tryAddingPreimage(preimage, hash);
+        var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
+            output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
         };
     };
 
-    var i; for (i = 0; i < tapleaf_gates.length; i++) {
-        if (tapleaf_gates[i].isSpendable()) {
-            return await handleBrokenPromise(tapleaf_gates[i]);
+    var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
+        if (output_tapleaf_gates[i].isSpendable()) {
+            return await handleBrokenPromise(output_tapleaf_gates[i]);
         }
     };
 
