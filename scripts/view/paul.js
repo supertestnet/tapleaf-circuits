@@ -7,22 +7,33 @@ $('.view_zero_checker').onclick = () => {
     $('.size_checker').classList.add("hidden");
     $('.shifter').classList.add("hidden");
     $('.addition').classList.add("hidden");
+    $('.sha256').classList.add("hidden");
 }
 $('.view_size_checker').onclick = () => {
     $('.zero_checker').classList.add("hidden");
     $('.size_checker').classList.remove("hidden");
     $('.shifter').classList.add("hidden");
     $('.addition').classList.add("hidden");
+    $('.sha256').classList.add("hidden");
 }
 $('.view_addition').onclick = () => {
     $('.zero_checker').classList.add("hidden");
     $('.size_checker').classList.add("hidden");
     $('.shifter').classList.add("hidden");
     $('.addition').classList.remove("hidden");
+    $('.sha256').classList.add("hidden");
 }
 $('.view_shifter').onclick = () => {
     $('.zero_checker').classList.add("hidden");
     $('.size_checker').classList.add("hidden");
     $('.addition').classList.add("hidden");
     $('.shifter').classList.remove("hidden");
+    $('.sha256').classList.add("hidden");
+}
+$('.view_sha256').onclick = () => {
+    $('.zero_checker').classList.add("hidden");
+    $('.size_checker').classList.add("hidden");
+    $('.addition').classList.add("hidden");
+    $('.shifter').classList.add("hidden");
+    $('.sha256').classList.remove("hidden");
 }

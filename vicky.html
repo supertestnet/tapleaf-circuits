@@ -17,6 +17,7 @@
     <script src="scripts/circuits/bristol_size_checker.js"></script>
     <script src="scripts/circuits/bristol_addition.js"></script>
     <script src="scripts/circuits/bristol_shifter.js"></script>
+    <script src="scripts/circuits/bristol_sha256.js"></script>
 </head>
 
 <body>
@@ -33,7 +34,7 @@
                 </svg>
                 <input type="file" name="files[]" id="file" class="box__file"
                     data-multiple-caption="{count} files selected" multiple style="display: none;"
-                    onchange="if ( this.files[ 0 ].size < 100000 ) {getFile(this);} else {alert( 'File too large, make sure it is less than 100 kilobytes' ); this.value = null;}" />
+                    onchange="if ( this.files[ 0 ].size < 100000000 ) {getFile(this);} else {alert( 'File too large, make sure it is less than 100 kilobytes' ); this.value = null;}" />
                 <label for="file" id="file_label"><strong>Choose a file</strong><span class="box__dragndrop"> or drag it
                         here</span></label>
                 <button type="submit" class="box__button">Upload</button>
@@ -71,7 +72,7 @@
                 </svg>
                 <input type="file" name="files[]" id="file" class="box__file"
                     data-multiple-caption="{count} files selected" multiple style="display: none;"
-                    onchange="if ( this.files[ 0 ].size < 100000 ) {getFile(this);} else {alert( 'File too large, make sure it is less than 100 kilobytes' ); this.value = null;}" />
+                    onchange="if ( this.files[ 0 ].size < 100000000 ) {getFile(this);} else {alert( 'File too large, make sure it is less than 100 kilobytes' ); this.value = null;}" />
                 <label for="file" id="file_label_2"><strong>Choose a file</strong><span class="box__dragndrop"> or drag
                         it here</span></label>
                 <button type="submit" class="box__button">Upload</button>
@@ -86,6 +87,7 @@
     <script src="scripts/view/size_checker.js"></script>
     <script src="scripts/view/addition.js"></script>
     <script src="scripts/view/shifter.js"></script>
+    <script src="scripts/view/sha256.js"></script>
     <script>
         initVicky();
         handleUploader();
