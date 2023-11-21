@@ -1,9 +1,8 @@
 async function handleBrokenPromise(tapleafGate) {
     var selected_script = tapleafGate.script();
-    var tree = challenge_scripts.map(s => tapscript.Tap.encodeScript(s));
     var target = tapscript.Tap.encodeScript(selected_script);
     var pubkey = "ab".repeat(32);
-    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target });
+    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { challenge_scripts, target });
 
     //the order they should go in is: output first, so it can be moved to the altstack;
     //then input 1, as it is processed first; then input 2, as it is processed next. And so on.

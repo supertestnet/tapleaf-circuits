@@ -106,7 +106,7 @@ var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
         var leaf = filled_in.replaceAll("\n\n", "\n").replaceAll(" ", "").split("\n");
         leaf.splice(0, 1);
         leaf.splice(leaf.length - 1, 1);
-        anti_contradiction_scripts.push(leaf);
+        anti_contradiction_scripts.push(tapscript.Tap.encodeScript(leaf));
     });
 
     subsequent_commitment_hashes.forEach(hash_pair => {
@@ -114,7 +114,7 @@ var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
         var leaf = filled_in.replaceAll("\n\n", "\n").replaceAll(" ", "").split("\n");
         leaf.splice(0, 1);
         leaf.splice(leaf.length - 1, 1);
-        anti_contradiction_scripts.push(leaf);
+        anti_contradiction_scripts.push(tapscript.Tap.encodeScript(leaf));
     });
 
     var last_leaf = [
@@ -125,15 +125,11 @@ var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
         "OP_CHECKSIG"
     ];
 
-    anti_contradiction_scripts.push(last_leaf);
+    anti_contradiction_scripts.push(tapscript.Tap.encodeScript(last_leaf));
 
-    var tree = anti_contradiction_scripts.map(s => tapscript.Tap.encodeScript(s));
-    var selected_script = anti_contradiction_scripts[0];
-    anti_contradiction_script = selected_script;
-    anti_contradiction_tapleaf = tapscript.Tap.encodeScript(anti_contradiction_script);
-    var target = tapscript.Tap.encodeScript(selected_script);
+    var target = anti_contradiction_scripts[0];
     var pubkey = "ab".repeat(32);
-    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target });
+    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { anti_contradiction_scripts, target });
     anti_contradiction_tpubkey = tpubkey;
     anti_contradiction_cblock = cblock;
     var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey(tpubkey, network);
@@ -173,11 +169,13 @@ var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
                 }
             }
         },
-        isSpendable: function () {
-            var wires = [...this.inputs, ...this.outputs];
-            var i; for (i = 0; i < wires.length; i++) {
-                if (wires[i].preimage.length == 0) return false;
-            };
+        isSpendable: function (checkPreimages = true) {
+            if (checkPreimages) {
+                var wires = [...this.inputs, ...this.outputs];
+                var i; for (i = 0; i < wires.length; i++) {
+                    if (wires[i].preimage.length == 0) return false;
+                };
+            }
             var evaluation = -1;
             eval_string = `evaluation = ${this.gate.name}( `;
             this.inputs.forEach((wire, index) => {
@@ -190,53 +188,13 @@ var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
             return (evaluation != this.outputs[0].value);
         },
         script: function () {
-            var script_template_1_input_1_output_gate = `
-                OP_TOALTSTACK
-                OP_SHA256
-                #INSERT_INPUT_1_HASH_HERE#
-                OP_EQUALVERIFY
-                OP_#INSERT_INPUT_1_VALUE_HERE#
-                #INSERT_OPERATION_HERE#
-                OP_FROMALTSTACK
-                OP_SHA256
-                #INSERT_OUTPUT_1_HASH_HERE#
-                OP_EQUALVERIFY
-                OP_#INSERT_OUTPUT_1_VALUE_HERE#
-                OP_NUMNOTEQUAL
-                OP_VERIFY
-                ${verifierPubkey}
-                OP_CHECKSIG
-            `;
-
-            var script_template_2_input_1_output_gate = `
-                OP_TOALTSTACK
-                OP_SHA256
-                #INSERT_INPUT_1_HASH_HERE#
-                OP_EQUALVERIFY
-                OP_#INSERT_INPUT_1_VALUE_HERE#
-                OP_SWAP
-                OP_SHA256
-                #INSERT_INPUT_2_HASH_HERE#
-                OP_EQUALVERIFY
-                OP_#INSERT_INPUT_2_VALUE_HERE#
-                #INSERT_OPERATION_HERE#
-                OP_FROMALTSTACK
-                OP_SHA256
-                #INSERT_OUTPUT_1_HASH_HERE#
-                OP_EQUALVERIFY
-                OP_#INSERT_OUTPUT_1_VALUE_HERE#
-                OP_NUMNOTEQUAL
-                OP_VERIFY
-                ${verifierPubkey}
-                OP_CHECKSIG
-            `;
-
             if (gate.input_wires.length == 1 && gate.output_wires.length == 1) {
                 var script_template = script_template_1_input_1_output_gate;
             } else if (gate.input_wires.length == 2 && gate.output_wires.length == 1) {
                 var script_template = script_template_2_input_1_output_gate;
             }
 
+            script_template = script_template.replace("#INSERT_PUBLICKEY_HERE#", verifierPubkey);
             script_template = script_template.replace("#INSERT_OPERATION_HERE#", this.gate.operation());
 
             this.inputs.forEach((input, index) => {
@@ -295,8 +253,10 @@ var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
                     tapleafGate.addOutput(possible_setting, hash_pair[possible_setting]);
                 });
 
-                tapleaf_gates.push(tapleafGate);
-                challenge_scripts.push(tapleafGate.script());
+                if (tapleafGate.isSpendable(false)) {
+                    tapleaf_gates.push(tapleafGate);
+                    challenge_scripts.push(tapscript.Tap.encodeScript(tapleafGate.script()));
+                }
             });
         });
     });
@@ -309,15 +269,11 @@ var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
         "OP_CHECKSIG"
     ];
 
-    challenge_scripts.push(last_leaf);
+    challenge_scripts.push(tapscript.Tap.encodeScript(last_leaf));
 
-    var tree = challenge_scripts.map(s => tapscript.Tap.encodeScript(s));
-    var selected_script = challenge_scripts[challenge_scripts.length - 1];
-    challenge_script = selected_script;
-    challenge_tapleaf = tapscript.Tap.encodeScript(challenge_script);
-    var target = tapscript.Tap.encodeScript(selected_script);
+    var target = challenge_scripts[challenge_scripts.length - 1];
     var pubkey = "ab".repeat(32);
-    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target });
+    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { challenge_scripts, target });
     challenge_tpubkey = tpubkey;
     challenge_cblock = cblock;
     var challenge_address = tapscript.Address.p2tr.fromPubKey(tpubkey, network);

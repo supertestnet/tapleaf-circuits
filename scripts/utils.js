@@ -57,7 +57,6 @@ function saveDataToFile(data, fileName) {
     window.URL.revokeObjectURL(url);
 }
 
-function removeDuplicates(arr) {
-    var copy = JSON.parse(JSON.stringify(arr));
-    return copy.filter((item, index) => copy.indexOf(item) === index);
+function removeDuplicates(array) {
+    return array.filter((item, index) => array.indexOf(item) === index);
 }
