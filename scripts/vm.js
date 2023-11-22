@@ -137,6 +137,46 @@ var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
 }
 
 var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
+    var script_template_1_input_1_output_gate = `
+        OP_TOALTSTACK
+        OP_SHA256
+        #INSERT_INPUT_1_HASH_HERE#
+        OP_EQUALVERIFY
+        OP_#INSERT_INPUT_1_VALUE_HERE#
+        #INSERT_OPERATION_HERE#
+        OP_FROMALTSTACK
+        OP_SHA256
+        #INSERT_OUTPUT_1_HASH_HERE#
+        OP_EQUALVERIFY
+        OP_#INSERT_OUTPUT_1_VALUE_HERE#
+        OP_NUMNOTEQUAL
+        OP_VERIFY
+        #INSERT_PUBLICKEY_HERE#
+        OP_CHECKSIG
+    `;
+
+    var script_template_2_input_1_output_gate = `
+        OP_TOALTSTACK
+        OP_SHA256
+        #INSERT_INPUT_1_HASH_HERE#
+        OP_EQUALVERIFY
+        OP_#INSERT_INPUT_1_VALUE_HERE#
+        OP_SWAP
+        OP_SHA256
+        #INSERT_INPUT_2_HASH_HERE#
+        OP_EQUALVERIFY
+        OP_#INSERT_INPUT_2_VALUE_HERE#
+        #INSERT_OPERATION_HERE#
+        OP_FROMALTSTACK
+        OP_SHA256
+        #INSERT_OUTPUT_1_HASH_HERE#
+        OP_EQUALVERIFY
+        OP_#INSERT_OUTPUT_1_VALUE_HERE#
+        OP_NUMNOTEQUAL
+        OP_VERIFY
+        #INSERT_PUBLICKEY_HERE#
+        OP_CHECKSIG
+    `;
 
     return {
         gate: gate,
