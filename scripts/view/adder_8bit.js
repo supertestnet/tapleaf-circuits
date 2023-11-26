@@ -1,10 +1,10 @@
-programs["addition"] = {
+programs["adder_8bit"] = {
     initialize: () => {
-        circuit.parseBristolString(circuit_bristol_addition);
+        circuit.parseBristolString(circuit_bristol_adder_8bit);
     },
     promise_prompt: (outputs, promise) => {
         var prompt = ``;
-        prompt += `They promise to send you two numbers which add up to ${parseInt(outputs[0], 2)}. `;
+        prompt += `They promise to send you two numbers which add up to ${parseInt(outputs[1], 2)}. `;
         prompt += `They'll put up a bond to show they mean it, and if they break their promise, `;
         prompt += `you can prove they lied and take their money.`;
         return prompt;
@@ -13,13 +13,11 @@ programs["addition"] = {
         var prompt = ``;
         prompt += `The prover kept his promise. `;
 
-        var do_or_dont = "";
-        if (parseInt(inputs[0], 2) + parseInt(inputs[1], 2) != parseInt(outputs[0], 2)) do_or_dont = "don't ";
-        prompt += `He promised to give you two numbers that ${do_or_dont}add up to ${parseInt(outputs[0], 2)}. `;
+        prompt += `He promised to give you two numbers that add up to ${parseInt(outputs[1], 2)}. `;
 
-        prompt += `The first number he gave you is ${parseInt(inputs[0], 2)} and the second is ${parseInt(inputs[1], 2)}.\n\n`
-        prompt += `Bitvm checked whether they add up to ${parseInt(outputs[0], 2)} `;
-        prompt += `and it determined the equation is: ${parseInt(inputs[0], 2) + parseInt(inputs[1], 2) == parseInt(outputs[0], 2)}`;
+        prompt += `The first number he gave you is ${parseInt(inputs[1], 2)} and the second is ${parseInt(inputs[2], 2)}.\n\n`
+        prompt += `Bitvm checked whether they add up to ${parseInt(outputs[1], 2)} `;
+        prompt += `and it determined the equation is: true`;
         prompt += ` -- just as the prover promised. `;
 
         prompt += `Meaning not only do *you* know the prover kept his promise, your bitcoin transaction knows it too. `;
@@ -29,36 +27,34 @@ programs["addition"] = {
     }
 };
 
-if ($('.addition_program')) {
-    $('.choose_addition').onclick = async () => {
-        $('.addition_program').classList.remove("hidden");
+if ($('.adder_8bit_program')) {
+    $('.choose_adder_8bit').onclick = async () => {
+        $('.adder_8bit_program').classList.remove("hidden");
         $('.home').classList.add("hidden");
-        programs["addition"].initialize();
+        programs["adder_8bit"].initialize();
         await circuit.setWiresPreimagesAndHashes();
         generateBitCommitments();
     }
-    $('.addition_step_one_done').onclick = () => {
-        $('.addition_step_one').classList.add("hidden");
-        $('.addition_step_two').classList.remove("hidden");
-        vickys_key = $('.addition_program .vickys_key').value;
+    $('.adder_8bit_step_one_done').onclick = () => {
+        $('.adder_8bit_step_one').classList.add("hidden");
+        $('.adder_8bit_step_two').classList.remove("hidden");
+        vickys_key = $('.adder_8bit_program .vickys_key').value;
     }
-    $('.submit_sum_num').onclick = () => {
-        promise = Number($('.sum_num').value);
-        var binary = promise.toString(2);
-        if (binary.length % 2) binary = "0" + binary;
-        var padding = "0".repeat(32);
-        binary = padding + binary;
-        binary = binary.substring(binary.length - 32);
+    $('.submit_sum_num_8bit').onclick = () => {
+        var final_carry = Number($('.final_carry').value);
+        promise = Number($('.sum_num_8bit').value);
+        var binary = promise.toString(2).padStart(8, "0");
+        binary = final_carry + binary;
         bin_array = binary.split("")
         bin_array.forEach((item, index) => bin_array[index] = Number(item));
         var output_preimages = [];
-        var i; for (i = circuit.wires.length - circuit.output_sizes[0]; i < circuit.wires.length; i++) {
-            var preimage = circuit.wires[i].settings_preimages[bin_array[(i - circuit.wires.length) + circuit.output_sizes[0]]];
+        var i; for (i = circuit.wires.length - circuit.output_sizes[0] - circuit.output_sizes[1]; i < circuit.wires.length; i++) {
+            var preimage = circuit.wires[i].settings_preimages[bin_array[(i - circuit.wires.length) + circuit.output_sizes[0] + circuit.output_sizes[1]]];
             // console.log( i, ( i - circuit.wires.length ) + circuit.output_sizes[0], preimage );
             output_preimages.push(preimage);
         }
         var message_to_vicky = {
-            program: "addition",
+            program: "adder_8bit",
             promise,
             pauls_key: pubkey,
             initial_commitment_hashes,
@@ -67,12 +63,12 @@ if ($('.addition_program')) {
         }
         saveDataToFile(JSON.stringify(message_to_vicky), "promise_file.txt");
     }
-    $('.addition_step_two_done').onclick = () => {
-        $('.addition_step_one').classList.add("hidden");
-        $('.addition_step_two').classList.add("hidden");
-        $('.addition_step_three').classList.remove("hidden");
-        promise = $('.sum_num').value;
-        $('.addition_program .step_six_promise_to_vicky').innerText = promise.toLowerCase();
+    $('.adder_8bit_step_two_done').onclick = () => {
+        $('.adder_8bit_step_one').classList.add("hidden");
+        $('.adder_8bit_step_two').classList.add("hidden");
+        $('.adder_8bit_step_three').classList.remove("hidden");
+        promise = $('.sum_num_8bit').value;
+        $('.adder_8bit_program .step_six_promise_to_vicky').innerText = promise.toLowerCase();
         bit_commitment_address = generateBitCommitmentAddress(pubkey, vickys_key);
         anti_contradiction_address = generateAntiContradictionAddress(pubkey, vickys_key);
         challenge_address = generateChallengeAddress(pubkey, vickys_key);
@@ -83,20 +79,20 @@ if ($('.addition_program')) {
                         <p>Anti contradiction address: ${anti_contradiction_address}</p>
                         <p>Challenge address: ${challenge_address}</p>
                     `;
-        $('.addition_program .address_validation').innerHTML = html;
+        $('.adder_8bit_program .address_validation').innerHTML = html;
     }
-    $('.addition_step_three_reset').onclick = () => {
+    $('.adder_8bit_step_three_reset').onclick = () => {
         alert(`Something must have gone wrong so it is not safe to continue. The page will reset.`);
         window.location.reload();
     }
-    $('.addition_step_three_done').onclick = async () => {
-        $('.addition_step_one').classList.add("hidden");
-        $('.addition_step_two').classList.add("hidden");
-        $('.addition_step_three').classList.add("hidden");
-        $('.addition_step_four').classList.remove("hidden");
-        $('.addition_program .funding_address_in_step_four').innerText = starter_address;
+    $('.adder_8bit_step_three_done').onclick = async () => {
+        $('.adder_8bit_step_one').classList.add("hidden");
+        $('.adder_8bit_step_two').classList.add("hidden");
+        $('.adder_8bit_step_three').classList.add("hidden");
+        $('.adder_8bit_step_four').classList.remove("hidden");
+        $('.adder_8bit_program .funding_address_in_step_four').innerText = starter_address;
         console.log("starter address:", starter_address);
-        $('.addition_program .asking_for_txid').innerHTML = `If you are looking for testnet coins, try this faucet: <a href="https://faucet.mutinynet.com/" target="_blank">https://faucet.mutinynet.com</a>`;
+        $('.adder_8bit_program .asking_for_txid').innerHTML = `If you are looking for testnet coins, try this faucet: <a href="https://faucet.mutinynet.com/" target="_blank">https://faucet.mutinynet.com</a>`;
         await waitSomeSeconds(3);
         if ($_GET["network"] == "regtest") {
             var txid = prompt(`What was the txid?`);
@@ -109,8 +105,8 @@ if ($('.addition_program')) {
             var txid = txinfo[0];
             var vout = txinfo[1];
         }
-        $('.addition_step_four').classList.add("hidden");
-        $('.addition_step_five').classList.remove("hidden");
+        $('.adder_8bit_step_four').classList.add("hidden");
+        $('.adder_8bit_step_five').classList.remove("hidden");
         var amt = 10_000;
         var starter_txdata = tapscript.Tx.create({
             vin: [{
@@ -134,7 +130,7 @@ if ($('.addition_program')) {
         starter_txid = tapscript.Tx.util.getTxid(starter_txhex);
         starter_vout = 0;
         starter_amt = 9_500;
-        var destino = $('.addition_bitcoin_address').value;
+        var destino = $('.adder_8bit_bitcoin_address').value;
         if (!destino) destino = prompt(`Please enter a bitcoin address where you want your earnings to go`);
         var earnings_txdata = tapscript.Tx.create({
             vin: [{
@@ -256,9 +252,9 @@ if ($('.addition_program')) {
         //these other addresses, so she should validate his signatures before doing
         //that swap. She should also independently construct all the txs above so
         //she has an independent copy of the sighashes to compare each sig against
-        $('.addition_program .starter_txhex').innerText = starter_txhex;
+        $('.adder_8bit_program .starter_txhex').innerText = starter_txhex;
         setTimeout(() => { pushBTCpmt(starter_txhex, ""); }, 2000);
-        $('.addition_step_five_done').click();
+        $('.adder_8bit_step_five_done').click();
         presigned_tx_sigs = {
             funding_to_bit_commitment_sig: funding_to_bit_commitment_sig.hex,
             funding_to_anti_contradiction_sig: funding_to_anti_contradiction_sig.hex,
@@ -267,35 +263,31 @@ if ($('.addition_program')) {
             commitment_to_challenge_sig: commitment_to_challenge_sig.hex,
         }
     }
-    $('.addition_step_five_done').onclick = async () => {
-        $('.addition_step_five').classList.add("hidden");
-        $('.addition_step_six').classList.remove("hidden");
+    $('.adder_8bit_step_five_done').onclick = async () => {
+        $('.adder_8bit_step_five').classList.add("hidden");
+        $('.adder_8bit_step_six').classList.remove("hidden");
     }
-    $('.addition_step_six_done').onclick = async () => {
-        var num1 = Number($('.addition_num_1').value);
-        var binary = num1.toString(2);
-        if (binary.length % 2) binary = "0" + binary;
-        var padding = "0".repeat(32);
-        binary = padding + binary;
-        binary = binary.substring(binary.length - 32);
+    $('.adder_8bit_step_six_done').onclick = async () => {
+        var prev_carry = Number($('.adder_8bit_prev_carry').value);
+        var num1 = Number($('.adder_8bit_num_1').value);
+        var binary = num1.toString(2).padStart(8, "0");
         bin_array_1 = binary.split("")
         bin_array_1.forEach((item, index) => bin_array_1[index] = Number(item));
-        var num2 = Number($('.addition_num_2').value);
-        var binary = num2.toString(2);
-        if (binary.length % 2) binary = "0" + binary;
-        var padding = "0".repeat(32);
-        binary = padding + binary;
-        binary = binary.substring(binary.length - 32);
+        var num2 = Number($('.adder_8bit_num_2').value);
+        var binary = num2.toString(2).padStart(8, "0");
         bin_array_2 = binary.split("")
         bin_array_2.forEach((item, index) => bin_array_2[index] = Number(item));
         console.log("num1:", bin_array_1.join(""), "num2:", bin_array_2.join(""));
         initial_commitment_preimages.forEach((preimage_pair, index) => {
-            if (index < 32) {
-                circuit.wires[index].setting = bin_array_1[index];
-                preimages_to_reveal.push(preimage_pair[bin_array_1[index]]);
+            if (index == 0) {
+                circuit.wires[index].setting = prev_carry;
+                preimages_to_reveal.push(preimage_pair[prev_carry]);
+            } else if (index < 8 + 1) {
+                circuit.wires[index].setting = bin_array_1[index - 1];
+                preimages_to_reveal.push(preimage_pair[bin_array_1[index - 1]]);
             } else {
-                circuit.wires[index].setting = bin_array_2[index - 32];
-                preimages_to_reveal.push(preimage_pair[bin_array_2[index - 32]]);
+                circuit.wires[index].setting = bin_array_2[index - (8 + 1)];
+                preimages_to_reveal.push(preimage_pair[bin_array_2[index - (8 + 1)]]);
             }
         });
 
@@ -320,10 +312,12 @@ if ($('.addition_program')) {
         alert(`You are about to be prompted to download a file called results_file.txt. Do so and send it to Vicky.`);
         var blockheight = await getBlockheight("");
         saveDataToFile(JSON.stringify(message_to_vicky), "results_file.txt");
-        $('.addition_step_six').innerHTML = `<p>After 10 blocks (so in block <span class="current_blockheight">${blockheight + 11}</span>) <a href="https://mutinynet.com/tx/push" target="_blank">go here</a> and broadcast this tx to collect your money if you sent the right data to Vicky (otherwise, expect Vicky to take your money):</p><p>${earnings_txhex}</p><p>While you wait, you can view the current blockheight here: <a href="https://mutinynet.com" target="_blank">https://mutinynet.com</a> (mutinynet is a bitcoin testnet where blocks arrive about every 30 seconds).</p>`;
+        $('.adder_8bit_step_six').innerHTML = `<p>After 10 blocks (so in block <span class="current_blockheight">${blockheight + 11}</span>) <a href="https://mutinynet.com/tx/push" target="_blank">go here</a> and broadcast this tx to collect your money if you sent the right data to Vicky (otherwise, expect Vicky to take your money):</p><p>${earnings_txhex}</p><p>While you wait, you can view the current blockheight here: <a href="https://mutinynet.com" target="_blank">https://mutinynet.com</a> (mutinynet is a bitcoin testnet where blocks arrive about every 30 seconds).</p>`;
     }
-    $('.addition_program .vickys_key').value = "";
-    $('.addition_program .sum_num').value = "";
-    $('.addition_program .addition_num_1').value = "";
-    $('.addition_program .addition_num_2').value = "";
+    $('.adder_8bit_program .vickys_key').value = "";
+    $('.adder_8bit_program .sum_num_8bit').value = "";
+    $('.adder_8bit_program .final_carry').value = "";
+    $('.adder_8bit_program .adder_8bit_prev_carry').value = "";
+    $('.adder_8bit_program .adder_8bit_num_1').value = "";
+    $('.adder_8bit_program .adder_8bit_num_2').value = "";
 }
