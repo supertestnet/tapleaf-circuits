@@ -141,23 +141,30 @@ async function handlePromise(json) {
         questionable_hashes.push(hash);
     }
     var preimages_found = 0;
-    var output = ``;
+    var sum_of_all_output_sizes = circuit.output_sizes.reduce((ac, c) => ac + c, 0);
     var outputs = [];
-    var i; for (i = circuit.wires.length - circuit.output_sizes[0]; i < circuit.wires.length; i++) {
-        circuit.wires[i].settings_hashes.every((expected_hash, index) => {
-            var j; for (j = 0; j < questionable_hashes.length; j++) {
-                if (expected_hash == questionable_hashes[j]) {
-                    preimages_found = preimages_found + 1;
-                    output += String(index);
-                    return;
+    var k; for (k = 0; k < circuit.output_sizes.length; k++) {
+        var output_value = ``;
+        var output_start_wire = circuit.wires.length;
+        var j; for (j = circuit.output_sizes.length - 1; j >= k; j--) {
+            output_start_wire -= circuit.output_sizes[j];
+        }
+        var i; for (i = output_start_wire; i < output_start_wire + circuit.output_sizes[k]; i++) {
+            circuit.wires[i].settings_hashes.every((expected_hash, index) => {
+                var j; for (j = 0; j < questionable_hashes.length; j++) {
+                    if (expected_hash == questionable_hashes[j]) {
+                        preimages_found = preimages_found + 1;
+                        output_value += String(index);
+                        return;
+                    }
                 }
-            }
-            return true;
-        });
+                return true;
+            });
+        }
+        outputs.push(output_value);
     }
-    outputs.push(output);
-    if (preimages_found != circuit.output_sizes[0]) {
-        alert(`The prover sent you bad info. Aborting. Number of preimages you expected: ${circuit.output_sizes[0]} Number of preimages you got: ${preimages_found}`);
+    if (preimages_found != sum_of_all_output_sizes) {
+        alert(`The prover sent you bad info. Aborting. Number of preimages you expected: ${sum_of_all_output_sizes} Number of preimages you got: ${preimages_found}`);
         window.location.reload();
         return;
     }

@@ -81,11 +81,17 @@ circuit = {
             inputs.push(input_value);
         }
 
-        // TODO: adjust for multiple outputs (like above)
-        var i; for (i = this.wires.length - this.output_sizes[0]; i < this.wires.length; i++) {
-            output_value += String(this.wires[i].setting);
+        var i; for (i = 0; i < this.output_sizes.length; i++) {
+            var output_value = ``;
+            var output_start_wire = this.wires.length;
+            var j; for (j = this.output_sizes.length - 1; j >= i; j--) {
+                output_start_wire -= this.output_sizes[j];
+            }
+            var k; for (k = 0; k < this.output_sizes[i]; k++) {
+                output_value += String(this.wires[output_start_wire + k].setting);
+            }
+            outputs.push(output_value);
         }
-        outputs.push(output_value);
 
         return { inputs, outputs };
     }
