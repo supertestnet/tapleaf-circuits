@@ -46,7 +46,8 @@ if ($('.adder_8bit_program')) {
         var final_carry = String( Number( promise > 255 ) );
         var binary = promise.toString(2).padStart(8, "0");
         binary = final_carry + binary;
-        bin_array = binary.split("")
+        bin_array = binary.split("");
+        console.log( "bin_array:", bin_array );
         bin_array.forEach((item, index) => bin_array[index] = Number(item));
         var output_preimages = [];
         var i; for (i = circuit.wires.length - circuit.output_sizes[0] - circuit.output_sizes[1]; i < circuit.wires.length; i++) {
