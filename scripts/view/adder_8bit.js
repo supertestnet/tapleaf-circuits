@@ -3,6 +3,7 @@ programs["adder_8bit"] = {
         circuit.parseBristolString(circuit_bristol_adder_8bit);
     },
     promise_prompt: (outputs, promise) => {
+        console.log( outputs[ 1 ], parseInt(outputs[1], 2) );
         var prompt = ``;
         prompt += `They promise to send you two numbers which add up to ${parseInt(outputs[1], 2)}. `;
         prompt += `They'll put up a bond to show they mean it, and if they break their promise, `;
