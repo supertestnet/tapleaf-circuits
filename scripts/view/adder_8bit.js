@@ -41,8 +41,8 @@ if ($('.adder_8bit_program')) {
         vickys_key = $('.adder_8bit_program .vickys_key').value;
     }
     $('.submit_sum_num_8bit').onclick = () => {
-        var final_carry = Number($('.final_carry').value);
         promise = Number($('.sum_num_8bit').value);
+        var final_carry = promise > 255;
         var binary = promise.toString(2).padStart(8, "0");
         binary = final_carry + binary;
         bin_array = binary.split("")
