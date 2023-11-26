@@ -42,7 +42,7 @@ if ($('.adder_8bit_program')) {
     }
     $('.submit_sum_num_8bit').onclick = () => {
         promise = Number($('.sum_num_8bit').value);
-        var final_carry = promise > 255;
+        var final_carry = String( Number( promise > 255 ) );
         var binary = promise.toString(2).padStart(8, "0");
         binary = final_carry + binary;
         bin_array = binary.split("")
