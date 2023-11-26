@@ -161,7 +161,6 @@ async function handlePromise(json) {
                 return true;
             });
         }
-        console.log( "outputs:", outputs );
         outputs.push(output_value);
     }
     if (preimages_found != sum_of_all_output_sizes) {
