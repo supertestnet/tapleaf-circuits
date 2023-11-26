@@ -42,7 +42,7 @@ if ($('.sha256_program')) {
         $('.choose_sha256').disabled = true;
         programs["sha256"].initialize();
         await circuit.setWiresPreimagesAndHashes();
-        await generateBitCommitments();
+        generateBitCommitments();
         $('.sha256_program').classList.remove("hidden");
         $('.home').classList.add("hidden");
     }

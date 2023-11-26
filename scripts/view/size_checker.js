@@ -39,7 +39,7 @@ if ($('.size_checker_program')) {
         $('.home').classList.add("hidden");
         programs["size checker"].initialize();
         await circuit.setWiresPreimagesAndHashes();
-        await generateBitCommitments();
+        generateBitCommitments();
     }
     $('.size_checker_step_one_done').onclick = () => {
         $('.size_checker_step_one').classList.add("hidden");

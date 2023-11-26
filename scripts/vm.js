@@ -1,4 +1,4 @@
-var generateBitCommitments = async () => {
+var generateBitCommitments = () => {
     var sum_of_all_input_sizes = circuit.input_sizes.reduce((ac, c) => ac + c, 0);
     var i; for (i = 0; i < sum_of_all_input_sizes; i++) {
         initial_commitment_preimages.push(circuit.wires[i].settings_preimages);

@@ -33,7 +33,7 @@ if ($('.adder_8bit_program')) {
         $('.home').classList.add("hidden");
         programs["adder_8bit"].initialize();
         await circuit.setWiresPreimagesAndHashes();
-        await generateBitCommitments();
+        generateBitCommitments();
     }
     $('.adder_8bit_step_one_done').onclick = () => {
         $('.adder_8bit_step_one').classList.add("hidden");
