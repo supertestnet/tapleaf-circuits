@@ -2,16 +2,16 @@ async function handleBrokenPromise(tapleafGate) {
     var selected_script = tapleafGate.script();
     var target = tapscript.Tap.encodeScript(selected_script);
     var pubkey = "ab".repeat(32);
-    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { challenge_scripts, target });
+    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree: challenge_scripts, target });
 
     //the order they should go in is: output first, so it can be moved to the altstack;
     //then input 1, as it is processed first; then input 2, as it is processed next. And so on.
     var preimages = [];
+    tapleafGate.inputs.reverse().forEach((input) => {
+        preimages.push(input.preimage);
+    });
     tapleafGate.outputs.forEach((output) => {
         preimages.push(output.preimage);
-    });
-    tapleafGate.inputs.forEach((input) => {
-        preimages.push(input.preimage);
     });
     var destino = $('.vickys_bitcoin_address').value;
     if (!destino) destino = prompt(`Paul broke his promise so you can take his money. Please enter a bitcoin address where you want it to go`);
@@ -89,7 +89,8 @@ async function handleResult(json) {
 
     // Note: since we don't do bisection yet, we only check for the output gates
     var output_tapleaf_gates = [];
-    var minimum_output_wire_number = circuit.wires.length - circuit.output_sizes[0];
+    var sum_of_all_output_sizes = circuit.output_sizes.reduce((ac, c) => ac + c, 0);
+    var minimum_output_wire_number = circuit.wires.length - sum_of_all_output_sizes;
     var i; for (i = 0; i < tapleaf_gates.length; i++) {
         if (tapleaf_gates[i].gate.output_wires.reduce((ac, c) => ac || c >= minimum_output_wire_number, false)) {
             output_tapleaf_gates.push(tapleaf_gates[i]);
@@ -347,8 +348,6 @@ function modalVanish() {
 }
 
 function initVicky() {
-    var privkey = getRand(32);
-    var pubkey = nobleSecp256k1.getPublicKey(privkey, true).substring(2);
     window.vickys_key = pubkey;
     $('.vicky_key').innerText = pubkey;
 }
