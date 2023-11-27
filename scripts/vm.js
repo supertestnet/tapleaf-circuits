@@ -81,7 +81,7 @@ var generateBitCommitmentAddress = (proverPubkey, verifierPubkey) => {
     var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target });
     bit_commitment_tpubkey = tpubkey;
     bit_commitment_cblock = cblock;
-    var [tpubkey, alt_cblock] = tapscript.Tap.getPubKey(pubkey, { tree, commitment_to_anywhere_else_tapleaf });
+    var [tpubkey, alt_cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target: commitment_to_anywhere_else_tapleaf });
     commitment_to_anywhere_else_cblock = alt_cblock;
     var bit_commitment_address = tapscript.Address.p2tr.fromPubKey(tpubkey, network);
     return bit_commitment_address;
@@ -129,7 +129,7 @@ var generateAntiContradictionAddress = (proverPubkey, verifierPubkey) => {
 
     var target = anti_contradiction_scripts[0];
     var pubkey = "ab".repeat(32);
-    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { anti_contradiction_scripts, target });
+    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree: anti_contradiction_scripts, target });
     anti_contradiction_tpubkey = tpubkey;
     anti_contradiction_cblock = cblock;
     var anti_contradiction_address = tapscript.Address.p2tr.fromPubKey(tpubkey, network);
@@ -313,7 +313,7 @@ var generateChallengeAddress = (proverPubkey, verifierPubkey) => {
 
     var target = challenge_scripts[challenge_scripts.length - 1];
     var pubkey = "ab".repeat(32);
-    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { challenge_scripts, target });
+    var [tpubkey, cblock] = tapscript.Tap.getPubKey(pubkey, { tree: challenge_scripts, target });
     challenge_tpubkey = tpubkey;
     challenge_cblock = cblock;
     var challenge_address = tapscript.Address.p2tr.fromPubKey(tpubkey, network);
@@ -359,7 +359,7 @@ var generateFundingAddress = (proverPubkey, verifierPubkey) => {
     funding_to_paul_cblock = cblock;
     funding_tpubkey = tpubkey;
     funding_cblock = cblock;
-    var [tpubkey, alt_cblock] = tapscript.Tap.getPubKey(pubkey, { tree, funding_to_anywhere_else_tapleaf });
+    var [tpubkey, alt_cblock] = tapscript.Tap.getPubKey(pubkey, { tree, target: funding_to_anywhere_else_tapleaf });
     funding_to_anywhere_else_cblock = alt_cblock;
     var funding_address = tapscript.Address.p2tr.fromPubKey(tpubkey, network);
     return funding_address;
