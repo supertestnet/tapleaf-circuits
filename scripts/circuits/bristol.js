@@ -34,7 +34,11 @@ circuit.parseBristolString = function (bristol_string) {
                     "INV": "OP_NOT",
                     "OR": "OP_BOOLOR",
                     "AND": "OP_BOOLAND",
-                    "XOR": "OP_NUMNOTEQUAL"
+                    "XOR": "OP_NUMNOTEQUAL",
+                    "XNOR": "OP_NUMEQUAL",
+                    "NAND": "OP_BOOLAND OP_NOT",
+                    "NOR": "OP_BOOLOR OP_NOT",
+                    "LID": "",
                 };
                 return gate_to_operation_map[this.name];
             },
@@ -49,10 +53,10 @@ circuit.parseBristolString = function (bristol_string) {
             }
         };
 
-        if (gate.name == "INV") {
+        if (["INV", "LID"].indexOf(gate.name) > -1) {
             gate.input_wires.push(Number(gate_array[2]));
             gate.output_wires.push(Number(gate_array[3]));
-        } else if (["OR", "AND", "XOR"].indexOf(gate.name) > -1) {
+        } else if (["OR", "AND", "XOR", "XNOR", "NAND", "NOR"].indexOf(gate.name) > -1) {
             gate.input_wires.push(Number(gate_array[2]), Number(gate_array[3]));
             gate.output_wires.push(Number(gate_array[4]));
         }
@@ -84,7 +88,11 @@ circuit.parseBristolString = function (bristol_string) {
     }
 }
 
-var OR = (a, b) => Number(a || b);
 var AND = (a, b) => Number(a && b);
-var XOR = (a, b) => Number(a ^ b);
+var OR = (a, b) => Number(a || b);
 var INV = (a) => Number(!a);
+var NAND = (a, b) => Number(!(a && b));
+var NOR = ( a, b ) => Number(!(a || b));
+var XOR = (a, b) => Number(a ^ b);
+var XNOR = (a, b) => Number(a == b);
+var LID = (a) => Number( a );
