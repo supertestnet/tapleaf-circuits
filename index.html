@@ -19,6 +19,7 @@
     <script src="scripts/circuits/bristol_adder_8bit.js"></script>
     <script src="scripts/circuits/bristol_shifter.js"></script>
     <script src="scripts/circuits/bristol_sha256.js"></script>
+    <script src="scripts/circuits/bristol_8bit_cpu_64_cycles.js"></script>
 </head>
 
 <body>
@@ -42,6 +43,7 @@
             <button class="view_adder_8bit p_buttons">Adder (8-bit)</button>
             <button class="view_shifter p_buttons">Shifter</button>
             <button class="view_sha256 p_buttons">SHA256</button>
+            <button class="view_cpu_8bit_64_cycles p_buttons" disabled>STU-1 CPU (coming soon!)</button>
         </p>
         <div class="zero_checker hidden">
             <h3 class="zero_checker_label">
@@ -53,6 +55,15 @@
                 zeros. The verifier can take the prover's money if the promise is broken.
             </div>
             <p><button class="choose_zero_checker">Choose this program</button></p>
+        </div>
+        <div class="cpu_8bit_64_cycles hidden">
+            <h3 class="cpu_8bit_64_cycles_label">
+                STU-1 CPU
+            </h3>
+            <div class="cpu_8bit_64_cycles_instructions">
+                In this program, the prover must make the CPU halt on its first step. Otherwise, the verifier can take the prover's money.
+            </div>
+            <p><button class="choose_cpu_8bit_64_cycles">Choose this program</button></p>
         </div>
         <div class="size_checker hidden">
             <h3 class="size_checker_label">
@@ -576,6 +587,72 @@
             <p><button class="sha256_step_six_done">Submit</button></p>
         </div>
     </div>
+        <div class="cpu_8bit_64_cycles_program program hidden">
+        <h1>STU-1 CPU</h1>
+        <div class="cpu_8bit_64_cycles_step_one">
+            <p>
+                In this demo you will play as Paul, the prover. The first step is to open up the page where Vicky -- the
+                verifier -- will verify your program, and copy her public key, and paste it here
+            </p>
+            <p>Visit Vicky's page: <a class="vicky_link" href="./vicky.html" target="_blank">Vicky page</a></p>
+            <script>
+                $('.vicky_link').href = "./vicky.html";
+                if ($_GET["network"]) $('.vicky_link').href = `./vicky.html?network=${$_GET["network"]}`;
+            </script>
+            <p>Enter Vicky's public key</p>
+            <p><input class="vickys_key"></p>
+            <p><button class="cpu_8bit_64_cycles_step_one_done">Done</button></p>
+        </div>
+        <div class="cpu_8bit_64_cycles_step_two hidden">
+            <p>
+                Time to make a promise to Vicky! You will cause the program to halt on its first step.
+            </p>
+            <select class="cpu_promise">
+                <option>Okay I guess that's what I'll do then</option>
+            </select>
+            <p><button class="submit_cpu_promise">Download your promise file</button></p>
+            <p>
+                Click ok when you've sent the promise file to Vicky
+            </p>
+            <p><button class="cpu_8bit_64_cycles_step_two_done">Done</button></p>
+        </div>
+        <div class="cpu_8bit_64_cycles_step_three hidden">
+            <p>
+                Enter the bitcoin address where you want your money to go when you get it back:
+            </p>
+            <p><input class="cpu_8bit_64_cycles_bitcoin_address"></p>
+            <p>
+                Also, it's time to validate that you and Vicky generated the same bitcoin addresses. Do all of these
+                match what Vicky got? (Note: don't send any money to them yet)
+            </p>
+            <div class="address_validation">loading...</div>
+            <p><button class="cpu_8bit_64_cycles_step_three_done">Yes, they match</button> <button
+                    class="cpu_8bit_64_cycles_step_three_reset">No, they don't match</button></p>
+        </div>
+        <div class="cpu_8bit_64_cycles_step_four hidden">
+            <p>
+                Also, send *PRECISELY* 10,000 sats to the following address to start the contract (if you send the wrong
+                amount it will not work):
+            </p>
+            <div class="funding_address_in_step_four">loading...</div>
+            <p class="asking_for_txid">Asking for txid and vout in 3 seconds</p>
+        </div>
+        <div class="cpu_8bit_64_cycles_step_five hidden">
+            <p>
+                Broadcast the following transaction to finalize the contract:
+            </p>
+            <div class="starter_txhex">loading...</div>
+            <p><button class="cpu_8bit_64_cycles_step_five_done">Done</button></p>
+        </div>
+        <div class="cpu_8bit_64_cycles_step_six hidden">
+            <p>
+                What string do you want to reveal to Vicky? Remember, you promised <span
+                    class="step_six_promise_to_vicky"></span> and she can take your money if you lie
+            </p>
+            <p><input class="cpu_8bit_64_cycles_paste_program"></p>
+            <p><button class="cpu_8bit_64_cycles_step_six_done">Submit</button></p>
+        </div>
+    </div>
     <script src="scripts/view/paul.js"></script>
     <script src="scripts/view/zero_checker.js"></script>
     <script src="scripts/view/size_checker.js"></script>
@@ -583,6 +660,7 @@
     <script src="scripts/view/adder_8bit.js"></script>
     <script src="scripts/view/shifter.js"></script>
     <script src="scripts/view/sha256.js"></script>
+    <script src="scripts/view/cpu_8bit_64_cycles.js"></script>
 </body>
 
 </html>
