@@ -39,7 +39,7 @@ if ($('.cpu_8bit_64_cycles_program')) {
     }
     $('.submit_cpu_promise').onclick = () => {
         promise = $('.cpu_promise').value;
-        var output_preimages = [subsequent_commitment_preimages[subsequent_commitment_preimages.length - 1][1]];
+        var output_preimages = [subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 156 + 7 )][0], subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 156 + 6 )][0], subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 156 + 5 )][0], subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 156 + 4 )][1], subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 156 + 3 )][0], subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 156 + 2 )][1], subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 156 + 1 )][0]];
         var message_to_vicky = {
             program: "8bit cpu with 64 cyles",
             promise,
