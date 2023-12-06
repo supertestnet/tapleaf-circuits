@@ -36,8 +36,8 @@ circuit.parseBristolString = function (bristol_string) {
                     "AND": "OP_BOOLAND",
                     "XOR": "OP_NUMNOTEQUAL",
                     "XNOR": "OP_NUMEQUAL",
-                    "NAND": "OP_BOOLAND OP_NOT",
-                    "NOR": "OP_BOOLOR OP_NOT",
+                    "NAND": "OP_BOOLAND\nOP_NOT",
+                    "NOR": "OP_BOOLOR\nOP_NOT",
                     "LID": "",
                 };
                 return gate_to_operation_map[this.name];
