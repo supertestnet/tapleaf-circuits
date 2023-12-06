@@ -201,16 +201,16 @@ var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
             var i; for (i = 0; i < this.inputs.length; i++) {
                 if (this.inputs[i].hash == potential_hash) {
                     this.inputs[i].preimage = potential_preimage;
+                    break;
                 }
             }
-            console.log( 3.3 );
 
             var i; for (i = 0; i < this.outputs.length; i++) {
                 if (this.outputs[i].hash == potential_hash) {
                     this.outputs[i].preimage = potential_preimage;
+                    break;
                 }
             }
-            console.log( 3.7 );
         },
         isSpendable: function (checkPreimages = true) {
             if (checkPreimages) {
