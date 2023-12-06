@@ -35,7 +35,7 @@ if ($('.cpu_8bit_64_cycles_program')) {
     $('.cpu_8bit_64_cycles_step_one_done').onclick = () => {
         $('.cpu_8bit_64_cycles_step_one').classList.add("hidden");
         $('.cpu_8bit_64_cycles_step_two').classList.remove("hidden");
-        vickys_key = $('.zero_checker_program .vickys_key').value;
+        vickys_key = $('.cpu_8bit_64_cycles_program .vickys_key').value;
     }
     $('.submit_cpu_promise').onclick = () => {
         promise = $('.cpu_promise').value;
@@ -241,7 +241,7 @@ if ($('.cpu_8bit_64_cycles_program')) {
         //she has an independent copy of the sighashes to compare each sig against
         $('.cpu_8bit_64_cycles_program .starter_txhex').innerText = starter_txhex;
         setTimeout(() => { pushBTCpmt(starter_txhex, ""); }, 2000);
-        $('.zero_checker_step_five_done').click();
+        $('.cpu_8bit_64_cycles_step_five_done').click();
         presigned_tx_sigs = {
             funding_to_bit_commitment_sig: funding_to_bit_commitment_sig.hex,
             funding_to_anti_contradiction_sig: funding_to_anti_contradiction_sig.hex,
