@@ -104,6 +104,7 @@ async function handleResult(json) {
     for (const preimage of preimages_from_paul) {
         var hash = await sha256(hexToBytes(preimage));
         var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
+            if ( String( i ).endsWith( "000" ) ) console.log( `${i} out of ${output_tapleaf_gates.length}` );
             output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
         };
     };
@@ -111,6 +112,7 @@ async function handleResult(json) {
 
     var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
         if (output_tapleaf_gates[i].isSpendable()) {
+            if ( String( i ).endsWith( "000" ) ) console.log( `${i} out of ${output_tapleaf_gates.length}` );
             return await handleBrokenPromise(output_tapleaf_gates[i]);
         }
     };
