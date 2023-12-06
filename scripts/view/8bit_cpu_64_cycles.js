@@ -35,7 +35,7 @@ if ($('.cpu_8bit_64_cycles_program')) {
     $('.cpu_8bit_64_cycles_step_one_done').onclick = () => {
         $('.cpu_8bit_64_cycles_step_one').classList.add("hidden");
         $('.cpu_8bit_64_cycles_step_two').classList.remove("hidden");
-        vickys_key = $('.zero_checker_program_program .vickys_key').value;
+        vickys_key = $('.zero_checker_program .vickys_key').value;
     }
     $('.submit_cpu_promise').onclick = () => {
         promise = $('.cpu_promise').value;
