@@ -46,7 +46,8 @@ var generateBitCommitmentAddress = (proverPubkey, verifierPubkey) => {
 
     var bit_commitment_script = ``;
 
-    initial_commitment_hashes.forEach(hash_pair => {
+    initial_commitment_hashes.forEach((hash_pair, index) => {
+        if ( !index ) console.log( hash_pair, proverPubkey, verifierPubkey );
         bit_commitment_script += bit_commitment_template.replace("INSERT_HASH_ZERO_HERE", hash_pair[0]).replace("INSERT_HASH_ONE_HERE", hash_pair[1]);
     });
 
