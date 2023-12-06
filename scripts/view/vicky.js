@@ -70,6 +70,7 @@ async function handleResult(json) {
         window.location.reload();
         return;
     }
+    console.log( 0 );
     //todo: validate Paul's other signatures
     var funding_to_challenge_sig = tapscript.Signer.taproot.sign(privkey, funding_to_challenge_txdata, 0, { extension: target });
     var sigs = [his_sig, funding_to_challenge_sig];
@@ -81,11 +82,13 @@ async function handleResult(json) {
     to_challenge_amt = starter_amt - 500;
     json["preimages_to_reveal"].forEach(item => preimages_from_paul.push(item));
     preimages_from_paul = removeDuplicates(preimages_from_paul);
+    console.log( 1 );
 
     //todo: actually give Vicky a transaction to broadcast here
     if (preimages_from_paul.length < circuit.wires.length) return alert("oh no! Go put your counterparty’s money in the bit commitment address!");
     //todo: also give Vicky a transaction to broadcast if Paul doesn't do his bit commitments in time
     //todo: also make the circuits reusable so that Vicky and Paul don't force close in every transaction
+    console.log( 2 );
 
     // Note: since we don't do bisection yet, we only check for the output gates
     var output_tapleaf_gates = [];
@@ -96,6 +99,7 @@ async function handleResult(json) {
             output_tapleaf_gates.push(tapleaf_gates[i]);
         }
     }
+    console.log( 3 );
 
     for (const preimage of preimages_from_paul) {
         var hash = await sha256(hexToBytes(preimage));
@@ -103,17 +107,21 @@ async function handleResult(json) {
             output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
         };
     };
+    console.log( 4 );
 
     var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
         if (output_tapleaf_gates[i].isSpendable()) {
             return await handleBrokenPromise(output_tapleaf_gates[i]);
         }
     };
+    console.log( 5 );
 
     // If we get here, paul has kept his promise!
 
     var r = await circuit.runAndGetInputAndOutputs();
+    console.log( 6, r.inputs, r.outputs );
     var prompt = programs[program].promise_kept_prompt(r.inputs, r.outputs, pauls_promise);
+    console.log( 7 );
     alert(prompt);
 }
 
