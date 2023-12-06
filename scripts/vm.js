@@ -203,12 +203,14 @@ var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
                     this.inputs[i].preimage = potential_preimage;
                 }
             }
+            console.log( 3.3 );
 
             var i; for (i = 0; i < this.outputs.length; i++) {
                 if (this.outputs[i].hash == potential_hash) {
                     this.outputs[i].preimage = potential_preimage;
                 }
             }
+            console.log( 3.7 );
         },
         isSpendable: function (checkPreimages = true) {
             if (checkPreimages) {
