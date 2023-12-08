@@ -183,6 +183,7 @@ async function handlePromise(json) {
         window.location.reload();
         return;
     }
+    console.log( "expected_preimage_positions:", expected_preimage_positions, "preimage_positions:", preimage_positions );
     if ( expected_preimage_positions && JSON.stringify( preimage_positions ) != JSON.stringify( expected_preimage_positions ) )
         return alert( `The prover sent you bad info about the preimage positions. Aborting` );
     questionable_preimages.forEach(item => preimages_from_paul.push(item));
