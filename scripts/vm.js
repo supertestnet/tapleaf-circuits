@@ -227,7 +227,6 @@ var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
             eval_string += " )";
             eval(eval_string);
             // TODO: adjust this for multiple outputs
-            console.log( "outputs:", this.outputs );
             return (evaluation != this.outputs[0].value);
         },
         script: function () {
