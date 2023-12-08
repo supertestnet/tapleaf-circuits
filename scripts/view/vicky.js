@@ -150,6 +150,12 @@ async function handlePromise(json) {
     }
     var preimages_found = 0;
     var sum_of_all_output_sizes = circuit.output_sizes.reduce((ac, c) => ac + c, 0);
+    var preimages_expected = sum_of_all_output_sizes;
+    if ( program == "8bit cpu with 64 cyles" )
+        if ( !( "preimages_expected" in json ) || !( "preimage_positions" in json ) ) return alert( `Your counterparty did not send you good data about the preimages you ought to expect in the output. Aborting.` );
+        preimages_expected = json[ "preimages_to_expect" ];
+        var expected_preimage_positions = json[ "preimage_positions" ];
+    var preimage_positions = [];
     var outputs = [];
     var k; for (k = 0; k < circuit.output_sizes.length; k++) {
         var output_value = ``;
@@ -163,6 +169,7 @@ async function handlePromise(json) {
                     if (expected_hash == questionable_hashes[j]) {
                         preimages_found = preimages_found + 1;
                         output_value += String(index);
+                        preimage_positions.push( i - output_start_wire );
                         return;
                     }
                 }
@@ -171,11 +178,13 @@ async function handlePromise(json) {
         }
         outputs.push(output_value);
     }
-    if (preimages_found != sum_of_all_output_sizes) {
-        alert(`The prover sent you bad info. Aborting. Number of preimages you expected: ${sum_of_all_output_sizes} Number of preimages you got: ${preimages_found}`);
+    if (preimages_found != preimages_expected) {
+        alert(`The prover sent you bad info. Aborting. Number of preimages you expected: ${preimages_expected} Number of preimages you got: ${preimages_found}`);
         window.location.reload();
         return;
     }
+    if ( expected_preimage_positions && JSON.stringify( preimage_positions ) != JSON.stringify( expected_preimage_positions ) )
+        return alert( `The prover sent you bad info about the preimage positions. Aborting` );
     questionable_preimages.forEach(item => preimages_from_paul.push(item));
     var message = `Someone wants to run a program with you called "${program}."`;
     message += " " + programs[program].promise_prompt(outputs, pauls_promise);
