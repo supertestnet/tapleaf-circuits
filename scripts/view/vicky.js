@@ -116,14 +116,14 @@ async function handleResult(json) {
     for (const preimage of preimages_from_paul) {
         var hash = await sha256(hexToBytes(preimage));
         var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
-            if ( json[ "program" ] == "8bit cpu with 64 cyles" && !preimage_positions.includes( i ) ) continue;
+            if ( json[ "program" ] == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
             output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
         };
     };
     console.log( 4, "done with preimage stuff, doing tapleaf stuff" );
 
     var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
-        if ( json[ "program" ] == "8bit cpu with 64 cyles" && !preimage_positions.includes( i ) ) continue;
+        if ( json[ "program" ] == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
         if (output_tapleaf_gates[i].isSpendable()) {
             return await handleBrokenPromise(output_tapleaf_gates[i]);
         }
@@ -169,11 +169,11 @@ async function handlePromise(json) {
     if ( program == "8bit cpu with 64 cyles" ) {
         if ( !( "preimage_positions" in json ) ) return alert( `Your counterparty did not send you good data about the preimages you ought to expect in the output. Aborting.` );
         preimages_expected = json[ "preimage_positions" ].length;
-        var expected_preimage_positions = json[ "preimage_positions" ];
-        preimage_positions = json[ "preimage_positions" ];
+        expected_preimage_positions = json[ "preimage_positions" ];
     }
     var outputs = [];
     var unchanging_output_start_wire;
+    var preimage_positions = [];
     var k; for (k = 0; k < circuit.output_sizes.length; k++) {
         var output_value = ``;
         var output_start_wire = circuit.wires.length;
