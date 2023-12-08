@@ -93,8 +93,8 @@ async function handleResult(json) {
     var minimum_output_wire_number = circuit.wires.length - sum_of_all_output_sizes;
     var i; for (i = 0; i < tapleaf_gates.length; i++) {
         console.log( 0 );
-        if ( json[ "program" ] == "8bit cpu with 64 cyles" ) {
-            console.log( 0 );
+        if ( program == "8bit cpu with 64 cyles" ) {
+            console.log( 1 );
             output_tapleaf_gates = [];
             var container = [];
             var i; for ( i=0; i<tapleaf_gates.length; i++ ) {
@@ -104,7 +104,7 @@ async function handleResult(json) {
                     output_tapleaf_gates.push(tapleaf_gates[i]);
                 }
             }
-            console.log( 1, output_tapleaf_gates );
+            console.log( 2, output_tapleaf_gates );
         } else {
             if (tapleaf_gates[i].gate.output_wires.reduce((ac, c) => ac || c >= minimum_output_wire_number, false)) {
                 output_tapleaf_gates.push(tapleaf_gates[i]);
