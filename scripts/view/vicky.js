@@ -146,7 +146,6 @@ async function handlePromise(json) {
     pauls_key = json["pauls_key"];
     subsequent_commitment_hashes = json["subsequent_commitment_hashes"];
     pauls_promise = json["promise"];
-    if ( json[ "preimage_positions" ] ) preimage_positions = json[ "preimage_positions" ];
     var pubkey = window.vickys_key;
     bit_commitment_address = generateBitCommitmentAddress(pauls_key, pubkey);
     anti_contradiction_address = generateAntiContradictionAddress(pauls_key, pubkey);
@@ -171,8 +170,8 @@ async function handlePromise(json) {
         if ( !( "preimage_positions" in json ) ) return alert( `Your counterparty did not send you good data about the preimages you ought to expect in the output. Aborting.` );
         preimages_expected = json[ "preimage_positions" ].length;
         var expected_preimage_positions = json[ "preimage_positions" ];
+        preimage_positions = json[ "preimage_positions" ];
     }
-    var preimage_positions = [];
     var outputs = [];
     var unchanging_output_start_wire;
     var k; for (k = 0; k < circuit.output_sizes.length; k++) {
