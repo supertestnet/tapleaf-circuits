@@ -152,7 +152,7 @@ async function handlePromise(json) {
     var sum_of_all_output_sizes = circuit.output_sizes.reduce((ac, c) => ac + c, 0);
     var preimages_expected = sum_of_all_output_sizes;
     if ( program == "8bit cpu with 64 cyles" )
-        if ( !( "preimages_expected" in json ) || !( "preimage_positions" in json ) ) return alert( `Your counterparty did not send you good data about the preimages you ought to expect in the output. Aborting.` );
+        if ( !( "preimages_to_expect" in json ) || !( "preimage_positions" in json ) ) return alert( `Your counterparty did not send you good data about the preimages you ought to expect in the output. Aborting.` );
         preimages_expected = json[ "preimages_to_expect" ];
         var expected_preimage_positions = json[ "preimage_positions" ];
     var preimage_positions = [];
