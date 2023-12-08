@@ -92,8 +92,20 @@ async function handleResult(json) {
     var sum_of_all_output_sizes = circuit.output_sizes.reduce((ac, c) => ac + c, 0);
     var minimum_output_wire_number = circuit.wires.length - sum_of_all_output_sizes;
     var i; for (i = 0; i < tapleaf_gates.length; i++) {
-        if (tapleaf_gates[i].gate.output_wires.reduce((ac, c) => ac || c >= minimum_output_wire_number, false)) {
-            output_tapleaf_gates.push(tapleaf_gates[i]);
+        if ( json[ "program" ] == "8bit cpu with 64 cyles" ) {
+            var output_tapleaf_gates = [];
+            var container = [];
+            var i; for ( i=0; i<tapleaf_gates.length; i++ ) {
+                var item = tapleaf_gates[ i ];
+                if ( item && tapleaf_gates[i].gate.output_wires[ 0 ] >= minimum_output_wire_number && !container.includes( JSON.stringify( [item[ "gate" ][ "name" ], item[ "gate" ][ "input_wires" ], item[ "gate" ][ "output_wires" ] ] ) ) ) {
+                    container.push( JSON.stringify( [item[ "gate" ][ "name" ], item[ "gate" ][ "input_wires" ], item[ "gate" ][ "output_wires" ] ] ) );
+                    output_tapleaf_gates.push(tapleaf_gates[i]);
+                }
+            }
+        } else {
+            if (tapleaf_gates[i].gate.output_wires.reduce((ac, c) => ac || c >= minimum_output_wire_number, false)) {
+                output_tapleaf_gates.push(tapleaf_gates[i]);
+            }
         }
     }
     console.log( 3, "doing preimage stuff", output_tapleaf_gates.length, output_tapleaf_gates );
@@ -101,14 +113,15 @@ async function handleResult(json) {
     for (const preimage of preimages_from_paul) {
         var hash = await sha256(hexToBytes(preimage));
         var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
+            if ( json[ "program" ] == "8bit cpu with 64 cyles" && !preimage_positions.includes( i ) ) continue;
             output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
         };
     };
     console.log( 4, "done with preimage stuff, doing tapleaf stuff" );
 
     var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
+        if ( json[ "program" ] == "8bit cpu with 64 cyles" && !preimage_positions.includes( i ) ) continue;
         if (output_tapleaf_gates[i].isSpendable()) {
-            if ( String( i ).endsWith( "000" ) ) console.log( `${i} out of ${output_tapleaf_gates.length}` );
             return await handleBrokenPromise(output_tapleaf_gates[i]);
         }
     };
@@ -130,6 +143,7 @@ async function handlePromise(json) {
     pauls_key = json["pauls_key"];
     subsequent_commitment_hashes = json["subsequent_commitment_hashes"];
     pauls_promise = json["promise"];
+    if ( json[ "preimage_positions" ] ) preimage_positions = json[ "preimage_positions" ];
     var pubkey = window.vickys_key;
     bit_commitment_address = generateBitCommitmentAddress(pauls_key, pubkey);
     anti_contradiction_address = generateAntiContradictionAddress(pauls_key, pubkey);
