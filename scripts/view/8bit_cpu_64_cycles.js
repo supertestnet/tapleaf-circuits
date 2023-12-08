@@ -75,6 +75,7 @@ if ($('.cpu_8bit_64_cycles_program')) {
         window.location.reload();
     }
     $('.cpu_8bit_64_cycles_step_three_done').onclick = async () => {
+        if ( !$('.cpu_8bit_64_cycles_bitcoin_address').value ) return alert( `You forgot to add a bitcoin address, try again` );
         $('.cpu_8bit_64_cycles_step_one').classList.add("hidden");
         $('.cpu_8bit_64_cycles_step_two').classList.add("hidden");
         $('.cpu_8bit_64_cycles_step_three').classList.add("hidden");
