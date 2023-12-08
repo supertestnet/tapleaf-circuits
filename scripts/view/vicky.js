@@ -157,19 +157,21 @@ async function handlePromise(json) {
         var expected_preimage_positions = json[ "preimage_positions" ];
     var preimage_positions = [];
     var outputs = [];
+    var unchanging_output_start_wire;
     var k; for (k = 0; k < circuit.output_sizes.length; k++) {
         var output_value = ``;
         var output_start_wire = circuit.wires.length;
         var j; for (j = circuit.output_sizes.length - 1; j >= k; j--) {
             output_start_wire -= circuit.output_sizes[j];
         }
+        if ( unchanging_output_start_wire === undefined ) unchanging_output_start_wire = output_start_wire;
         var i; for (i = output_start_wire; i < output_start_wire + circuit.output_sizes[k]; i++) {
             circuit.wires[i].settings_hashes.every((expected_hash, index) => {
                 var j; for (j = 0; j < questionable_hashes.length; j++) {
                     if (expected_hash == questionable_hashes[j]) {
                         preimages_found = preimages_found + 1;
                         output_value += String(index);
-                        preimage_positions.push( i - output_start_wire );
+                        preimage_positions.push( i - unchanging_output_start_wire );
                         return;
                     }
                 }
