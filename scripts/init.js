@@ -67,4 +67,4 @@ var to_challenge_vout = null;
 var to_challenge_amt = null;
 var program = null;
 var pauls_promise = null;
-var preimage_positions = null;
+var expected_preimage_positions = null;
