@@ -108,13 +108,13 @@ async function handleResult(json) {
     for (const preimage of preimages_from_paul) {
         var hash = await sha256(hexToBytes(preimage));
         var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
-            // if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( output_tapleaf_gates.length - ( 163 + i ) ) ) continue;
+            if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( output_tapleaf_gates.length - ( 163 + i ) ) ) continue;
             output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
         };
     };
 
     var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
-        // if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( output_tapleaf_gates.length - ( 163 + i ) ) ) continue;
+        if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( output_tapleaf_gates.length - ( 163 + i ) ) ) continue;
         if (output_tapleaf_gates[i].isSpendable()) {
             return await handleBrokenPromise(output_tapleaf_gates[i]);
         }
