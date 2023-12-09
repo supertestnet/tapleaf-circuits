@@ -90,9 +90,9 @@ async function handleResult(json) {
     var output_tapleaf_gates = [];
     var sum_of_all_output_sizes = circuit.output_sizes.reduce((ac, c) => ac + c, 0);
     var minimum_output_wire_number = circuit.wires.length - sum_of_all_output_sizes;
+    var container = [];
     var i; for (i = 0; i < tapleaf_gates.length; i++) {
         if ( program == "8bit cpu with 64 cyles" ) {
-            var container = [];
             var item = tapleaf_gates[ i ];
             if ( item && tapleaf_gates[i].gate.output_wires[ 0 ] >= minimum_output_wire_number && !container.includes( JSON.stringify( [item[ "gate" ][ "name" ], item[ "gate" ][ "input_wires" ], item[ "gate" ][ "output_wires" ] ] ) ) ) {
                 container.push( JSON.stringify( [item[ "gate" ][ "name" ], item[ "gate" ][ "input_wires" ], item[ "gate" ][ "output_wires" ] ] ) );
