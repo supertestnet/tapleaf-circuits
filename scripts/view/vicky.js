@@ -116,7 +116,7 @@ async function handleResult(json) {
     for (const preimage of preimages_from_paul) {
         var hash = await sha256(hexToBytes(preimage));
         var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
-            if ( json[ "program" ] == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
+            if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
             output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
         };
     };
