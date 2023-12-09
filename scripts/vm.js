@@ -225,6 +225,7 @@ var makeTapleafGateFromCircuitGate = (gate, verifierPubkey) => {
                 if (index != this.inputs.length - 1) eval_string += ", ";
             });
             eval_string += " )";
+            console.log( "eval string:", eval_string );
             eval(eval_string);
             // TODO: adjust this for multiple outputs
             return (evaluation != this.outputs[0].value);
