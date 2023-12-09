@@ -126,7 +126,7 @@ async function handleResult(json) {
     console.log( "outputs:", values );
 
     var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
-        if ( json[ "program" ] == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
+        if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
         if (output_tapleaf_gates[i].isSpendable()) {
             return await handleBrokenPromise(output_tapleaf_gates[i]);
         }
