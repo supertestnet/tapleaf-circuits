@@ -64,7 +64,6 @@ async function handleResult(json) {
     var sighash = tapscript.Signer.taproot.hash(funding_to_challenge_txdata, 0, { extension: target });
     var his_key = pauls_key;
     var his_funding_to_challenge_sig_is_good = await nobleSecp256k1.schnorr.verify(his_sig, sighash, his_key);
-    console.log("his funding to challenge sig is good, right?", his_funding_to_challenge_sig_is_good);
     if (!his_funding_to_challenge_sig_is_good) {
         alert(`Paul sent you a bad sig so you must not pay him for any work he does. Aborting and restarting the page.`);
         window.location.reload();
@@ -92,9 +91,7 @@ async function handleResult(json) {
     var sum_of_all_output_sizes = circuit.output_sizes.reduce((ac, c) => ac + c, 0);
     var minimum_output_wire_number = circuit.wires.length - sum_of_all_output_sizes;
     var i; for (i = 0; i < tapleaf_gates.length; i++) {
-        console.log( 0 );
         if ( program == "8bit cpu with 64 cyles" ) {
-            console.log( 1 );
             output_tapleaf_gates = [];
             var container = [];
             var i; for ( i=0; i<tapleaf_gates.length; i++ ) {
@@ -104,46 +101,41 @@ async function handleResult(json) {
                     output_tapleaf_gates.push(tapleaf_gates[i]);
                 }
             }
-            console.log( 2, output_tapleaf_gates );
         } else {
             if (tapleaf_gates[i].gate.output_wires.reduce((ac, c) => ac || c >= minimum_output_wire_number, false)) {
                 output_tapleaf_gates.push(tapleaf_gates[i]);
             }
         }
     }
-    console.log( 3, "doing preimage stuff", output_tapleaf_gates.length, output_tapleaf_gates );
 
     for (const preimage of preimages_from_paul) {
         var hash = await sha256(hexToBytes(preimage));
         var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
             if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
+            console.log( "adding preimage to:", i );
             output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
         };
     };
-    console.log( 4, "done with preimage stuff, doing tapleaf stuff" );
     var values = [];
     output_tapleaf_gates.forEach( item => values.push( item.outputs[ 0 ].value ) );
     console.log( "outputs:", values );
 
     var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
         if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
+        console.log( "checking if this one is spendable:", i );
         if (output_tapleaf_gates[i].isSpendable()) {
             return await handleBrokenPromise(output_tapleaf_gates[i]);
         }
     };
-    console.log( 5 );
 
     // If we get here, paul has kept his promise!
 
     var r = await circuit.runAndGetInputAndOutputs();
-    console.log( 6, r.inputs, r.outputs );
     var prompt = programs[program].promise_kept_prompt(r.inputs, r.outputs, pauls_promise);
-    console.log( 7 );
     alert(prompt);
 }
 
 async function handlePromise(json) {
-    console.log(json);
     program = json["program"];
     initial_commitment_hashes = json["initial_commitment_hashes"];
     pauls_key = json["pauls_key"];
@@ -204,7 +196,6 @@ async function handlePromise(json) {
         window.location.reload();
         return;
     }
-    console.log( "expected_preimage_positions:", expected_preimage_positions, "preimage_positions:", preimage_positions );
     if ( expected_preimage_positions && JSON.stringify( preimage_positions ) != JSON.stringify( expected_preimage_positions ) )
         return alert( `The prover sent you bad info about the preimage positions. Aborting` );
     questionable_preimages.forEach(item => preimages_from_paul.push(item));
