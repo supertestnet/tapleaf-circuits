@@ -122,10 +122,8 @@ async function handleResult(json) {
     };
     console.log( 4, "done with preimage stuff, doing tapleaf stuff" );
     var values = [];
-    output_tapleaf_gates.forEach( item => {
-        values.push( item.value, item );
-    });
-    console.log( "outputs:", values )
+    output_tapleaf_gates.forEach( item => values.push( item.outputs.value ) );
+    console.log( "outputs:", values );
 
     var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
         if ( json[ "program" ] == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
