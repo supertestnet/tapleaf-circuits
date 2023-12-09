@@ -109,18 +109,12 @@ async function handleResult(json) {
         var hash = await sha256(hexToBytes(preimage));
         var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
             if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( output_tapleaf_gates.length - ( 163 + i ) ) ) continue;
-            if ( program == "8bit cpu with 64 cyles" ) console.log( `output_tapleaf_gates[${i}] before preimage:`, output_tapleaf_gates[i] );
             output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
-            if ( program == "8bit cpu with 64 cyles" ) console.log( `output_tapleaf_gates[${i}] after preimage:`, output_tapleaf_gates[i] );
         };
     };
-    var values = [];
-    output_tapleaf_gates.forEach( item => {values.push( item.inputs[ 0 ].value )} );
-    console.log( "outputs:", values );
 
     var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
         if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( output_tapleaf_gates.length - ( 163 + i ) ) ) continue;
-        console.log( "checking if this one is spendable:", i );
         if (output_tapleaf_gates[i].isSpendable()) {
             return await handleBrokenPromise(output_tapleaf_gates[i]);
         }
@@ -129,6 +123,8 @@ async function handleResult(json) {
     // If we get here, paul has kept his promise!
 
     var r = await circuit.runAndGetInputAndOutputs();
+    console.log( "inputs:", r.inputs );
+    console.log( "outputs:", r.outputs );
     var prompt = programs[program].promise_kept_prompt(r.inputs, r.outputs, pauls_promise);
     alert(prompt);
 }
