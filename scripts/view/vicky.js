@@ -37,6 +37,8 @@ async function handleBrokenPromise(tapleafGate) {
     $('.wait_for_sigs_div').innerHTML = `<h1>You're in luck!</h1><p>Whoa, Paul broke his promise! That means you got to take his money. Cool! BTW your transaction doing so has already been broadcasted. At any moment, your money should show up in the address you designated.</p>`;
 }
 
+var output_tapleaf_gates = [];
+
 async function handleResult(json) {
     var starter_txid = json["starter_info"]["starter_txid"];
     var starter_vout = json["starter_info"]["starter_vout"];
@@ -87,7 +89,7 @@ async function handleResult(json) {
     //todo: also make the circuits reusable so that Vicky and Paul don't force close in every transaction
 
     // Note: since we don't do bisection yet, we only check for the output gates
-    var output_tapleaf_gates = [];
+    // var output_tapleaf_gates = [];
     var sum_of_all_output_sizes = circuit.output_sizes.reduce((ac, c) => ac + c, 0);
     var minimum_output_wire_number = circuit.wires.length - sum_of_all_output_sizes;
     var container = [];
