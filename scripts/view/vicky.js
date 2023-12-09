@@ -109,7 +109,9 @@ async function handleResult(json) {
         var hash = await sha256(hexToBytes(preimage));
         var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
             if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
+            console.log( "output_tapleaf_gates before preimage:", output_tapleaf_gates );
             output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
+            console.log( "output_tapleaf_gates after preimage:", output_tapleaf_gates );
         };
     };
     var values = [];
