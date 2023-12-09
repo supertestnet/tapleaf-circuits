@@ -94,7 +94,7 @@ async function handleResult(json) {
     var i; for (i = 0; i < tapleaf_gates.length; i++) {
         if ( program == "8bit cpu with 64 cyles" ) {
             var item = tapleaf_gates[ i ];
-            if ( item && tapleaf_gates[i].gate.output_wires[ 0 ] >= minimum_output_wire_number && !container.includes( JSON.stringify( [item[ "gate" ][ "name" ], item[ "gate" ][ "input_wires" ], item[ "gate" ][ "output_wires" ] ] ) ) ) {
+            if ( tapleaf_gates[i].gate.output_wires[ 0 ] >= minimum_output_wire_number && !container.includes( JSON.stringify( [item[ "gate" ][ "name" ], item[ "gate" ][ "input_wires" ], item[ "gate" ][ "output_wires" ] ] ) ) ) {
                 container.push( JSON.stringify( [item[ "gate" ][ "name" ], item[ "gate" ][ "input_wires" ], item[ "gate" ][ "output_wires" ] ] ) );
                 output_tapleaf_gates.push(tapleaf_gates[i]);
             }
@@ -108,7 +108,7 @@ async function handleResult(json) {
     for (const preimage of preimages_from_paul) {
         var hash = await sha256(hexToBytes(preimage));
         var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
-            if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
+            if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( output_tapleaf_gates.length - ( 163 + i ) ) ) continue;
             if ( program == "8bit cpu with 64 cyles" ) console.log( `output_tapleaf_gates[${i}] before preimage:`, output_tapleaf_gates[i] );
             output_tapleaf_gates[i].tryAddingPreimage(preimage, hash);
             if ( program == "8bit cpu with 64 cyles" ) console.log( `output_tapleaf_gates[${i}] after preimage:`, output_tapleaf_gates[i] );
@@ -119,7 +119,7 @@ async function handleResult(json) {
     console.log( "outputs:", values );
 
     var i; for (i = 0; i < output_tapleaf_gates.length; i++) {
-        if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( i ) ) continue;
+        if ( program == "8bit cpu with 64 cyles" && !expected_preimage_positions.includes( output_tapleaf_gates.length - ( 163 + i ) ) ) continue;
         console.log( "checking if this one is spendable:", i );
         if (output_tapleaf_gates[i].isSpendable()) {
             return await handleBrokenPromise(output_tapleaf_gates[i]);
