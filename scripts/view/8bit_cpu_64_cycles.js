@@ -72,33 +72,26 @@ if ($('.cpu_8bit_64_cycles_program')) {
         var remaining_ram_bits = "0".repeat( 120 ).split( "" );
         var assembly_preimages = [];
         Object.keys( assembly_bits ).forEach( ( item ) => assembly_preimages.push( initial_commitment_preimages[ 35 + Number( item ) ][ assembly_bits[ item ] ] ));
-        var output_bytes_to_reveal = prompt( `State which bytes you want to end up showing Vicky as output after your program runs. Keep in mind that you may reveal any byte of ram and/or the contents of register A. Use this format: [A, 14, 15]` );
+        var output_bytes_to_reveal = prompt( `State which bytes you want to end up showing Vicky as output after your program runs. Keep in mind that you may only reveal one or more bytes of ram. Use this format: [5, 14, 15]` );
         console.log( output_bytes_to_reveal[ 0 ], output_bytes_to_reveal );
-        if ( output_bytes_to_reveal[ 0 ] != "[" ) return alert( `You entered those bytes in an invalid format, please try again and ensure you use this format: [A, 14, 15]` );
-        output_bytes_to_reveal.replaceAll( " ", "" );
-        var includes_a = false;
-        var splittened = output_bytes_to_reveal.split( "" );
-        if ( splittened.includes( "A" ) ) {
-            includes_a = true;
-            splittened.splice( splittened.indexOf( "A" ), 2 );
-            if ( splittened.includes( "A" ) ) return alert( `You included A more than once, which is not allowed. Try again` );
-        }
-        output_bytes_to_reveal = splittened.join( "" );
-        console.log( "includes_a, right?", includes_a );
-        console.log( "the json:", output_bytes_to_reveal );
+        if ( output_bytes_to_reveal[ 0 ] != "[" ) return alert( `You entered those bytes in an invalid format, please try again and ensure you use this format: [5, 14, 15]` );
         var is_valid_json = isValidJson( output_bytes_to_reveal );
-        if ( !is_valid_json ) return alert( `You entered those bytes in an invalid format, please try again and ensure you use this format: [A, 14, 15]` );
+        if ( !is_valid_json ) return alert( `You entered those bytes in an invalid format, please try again and ensure you use this format: [5, 14, 15]` );
         output_bytes_to_reveal = JSON.parse( output_bytes_to_reveal );
         var all_nums = true;
         output_bytes_to_reveal.forEach( item => {if ( isNaN( item ) || Number( item ) < 0 || Number( item ) > 15 ) all_nums = false;} );
-        if ( !all_nums ) return alert( `You entered some ram registers that are not numbers, or that are bigger than 15, or that are smaller than 0, none of which is allowed. Try again` );
+        if ( !all_nums ) return alert( `You entered some invalid ram registers, only use the numbers 0 through 15. Try again` );
         var better_output_bytes = [];
         output_bytes_to_reveal.forEach( item => better_output_bytes.push( Number( item ) ) );
         output_bytes_to_reveal = better_output_bytes;
         var preimage_positions = [];
         output_bytes_to_reveal.forEach( item => {var i; for ( i=0; i<8; i++ ) preimage_positions.push( item * 8 + i );});
         console.log( "preimage positions:", preimage_positions );
-        var preimage_positions = [0, 1, 2, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162];
+        var incremented = [];
+        preimage_positions.forEach( item => incremented.push( item + 35 ) );\
+        preimage_positions = incremented;
+        console.log( "incremented preimage positions:", preimage_positions );
+        //var preimage_positions = [0, 1, 2, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162];
         var intended_output_preimages = [0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
         var revealed_output_preimages = [];
         preimage_positions.forEach( ( item, index ) => revealed_output_preimages.push( subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 163 - item )][ intended_output_preimages[ index ] ] ) );
