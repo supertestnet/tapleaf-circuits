@@ -38,7 +38,6 @@ if ($('.cpu_8bit_64_cycles_program')) {
         vickys_key = $('.cpu_8bit_64_cycles_program .vickys_key').value;
     }
     $('.submit_cpu_promise').onclick = () => {
-        promise = $('.cpu_promise').value;
         //inputs 0-34 are 0s, #35 (indexed from 0) is where the first bit of ram begins and where the program starts
         //and it's all ram til the end (bit #162 indexed from 0), so the program can take up to that much space --
         //though when I create inputs to these Assembly programs I usually put them in bytes 14 and 15 so I suppose
@@ -50,7 +49,11 @@ if ($('.cpu_8bit_64_cycles_program')) {
         //from boot (not sure why he should have to do that though -- who cares if
         //he initiates the vm in state 5? Vicky will pass the same input bits as he
         //does regardless, so it should still operate correctly and give her the
-        //agreed upon result)
+        //agreed upon result -- oh but wait, if he starts it at step 1 of HLT with
+        //the agreed upon result already in memory, the program will halt with the
+        //right result in memory but the inputs to the program won't actually
+        //compute that result -- so I need to ensure the computer starts at boot
+        //so that's a TODO: ensure the computer starts at boot
         var program_binary = prompt( `Please enter your program binary. They look like this: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` );
         var is_valid_json = isValidJson( program_binary );
         if ( !is_valid_json ) return alert( `You entered an invalid binary, please try again and ensure it has 163 bits in this format: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` );
@@ -91,8 +94,18 @@ if ($('.cpu_8bit_64_cycles_program')) {
         preimage_positions.forEach( item => incremented.push( item + 35 ) );
         preimage_positions = incremented;
         console.log( "incremented preimage positions:", preimage_positions );
-        //var preimage_positions = [0, 1, 2, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162];
-        var intended_output_preimages = [0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+        // var intended_output_preimages = [0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+        var intended_output_preimages_prep = prompt( `Enter the contents of the ram bytes you want to commit to as output after your program runs (that is, these bytes: ${output_bytes_to_reveal}). Use this format to commit, for example, to computing the following contents for bytes 0 and 1: {0: [1,1,1,1,0,0,0,0], 1: [0,0,0,0,0,0,0,0]}` );
+        var intended_output_preimages = [];
+        var i; for ( i=0; i<35; i++ ) intended_output_preimages.push( 0 );
+        var nums = [];
+        // var json = {0: [1,1,1,1,0,0,0,0], 1: [0,0,0,0,0,0,0,0]}
+        var json = JSON.parse( intended_output_preimages_prep );
+        Object.keys( json ).forEach( item => nums.push( Number( item ) ) );
+        nums.sort();
+        nums.forEach( item => intended_output_preimages.push( ...json[ String( item ) ] ) );
+        var i; for ( i=0; i<128; i++ ) {if ( intended_output_preimages.length < 163 ) intended_output_preimages.push( 0 );}
+        promise = intended_output_preimages_prep;
         var revealed_output_preimages = [];
         preimage_positions.forEach( ( item, index ) => {console.log( subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 163 - item )], item, intended_output_preimages[ item ], subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 163 - item )][ intended_output_preimages[ item ] ] );revealed_output_preimages.push( subsequent_commitment_preimages[subsequent_commitment_preimages.length - ( 163 - item )][ intended_output_preimages[ item ] ] );} );
         var message_to_vicky = {
