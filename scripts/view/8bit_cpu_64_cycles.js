@@ -95,7 +95,7 @@ if ($('.cpu_8bit_64_cycles_program')) {
         preimage_positions = incremented;
         console.log( "incremented preimage positions:", preimage_positions );
         // var intended_output_preimages = [0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-        var intended_output_preimages_prep = prompt( `Enter the contents of the ram bytes you want to commit to as output after your program runs (that is, these bytes: ${output_bytes_to_reveal}). Use this format to commit, for example, to computing the following contents for bytes 0 and 1: {0: [1,1,1,1,0,0,0,0], 1: [0,0,0,0,0,0,0,0]}` );
+        var intended_output_preimages_prep = prompt( `Enter the contents of the ram bytes you want to commit to as output after your program runs (that is, these bytes: ${output_bytes_to_reveal}). Use this format to commit, for example, to computing the following contents for bytes 0 and 1: {"0": [1,1,1,1,0,0,0,0], "1": [0,0,0,0,0,0,0,0]}` );
         var intended_output_preimages = [];
         var i; for ( i=0; i<35; i++ ) intended_output_preimages.push( 0 );
         var nums = [];
