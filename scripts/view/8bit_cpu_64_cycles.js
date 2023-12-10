@@ -73,6 +73,7 @@ if ($('.cpu_8bit_64_cycles_program')) {
         var assembly_preimages = [];
         Object.keys( assembly_bits ).forEach( ( item ) => assembly_preimages.push( initial_commitment_preimages[ 35 + Number( item ) ][ assembly_bits[ item ] ] ));
         var output_bytes_to_reveal = prompt( `State which bytes you want to end up showing Vicky as output after your program runs. Keep in mind that you may reveal any byte of ram and/or the contents of register A. Use this format: [A, 14, 15]` );
+        console.log( output_bytes_to_reveal[ 0 ], output_bytes_to_reveal );
         if ( output_bytes_to_reveal[ 0 ] != "[" ) return alert( `You entered those bytes in an invalid format, please try again and ensure you use this format: [A, 14, 15]` );
         output_bytes_to_reveal.replaceAll( " ", "" );
         var includes_a = false;
@@ -83,6 +84,9 @@ if ($('.cpu_8bit_64_cycles_program')) {
             if ( splittened.includes( "A" ) ) return alert( `You included A more than once, which is not allowed. Try again` );
         }
         splittened.join( "" );
+        console.log( "includes_a, right?", includes_a );
+        output_bytes_to_reveal = splittened;
+        console.log( "the json:", output_bytes_to_reveal );
         var is_valid_json = isValidJson( output_bytes_to_reveal );
         if ( !is_valid_json ) return alert( `You entered those bytes in an invalid format, please try again and ensure you use this format: [A, 14, 15]` );
         output_bytes_to_reveal = JSON.parse( output_bytes_to_reveal );
