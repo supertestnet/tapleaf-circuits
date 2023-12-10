@@ -45,11 +45,31 @@ if ($('.cpu_8bit_64_cycles_program')) {
         //those bytes won't usually be revealed at this stage
         var starting_bits = "0".repeat( 35 ).split( "" );
         //note that there are 35 0s above because there are 35 bits in bits 0 to 34
-        var assembly_bits = [1,1,1,1,0,0,0,0];
-        var assembly_preimages = [];
+        //I'm not currently doing anything with that info but maybe later I'll want
+        //the prover to prove that the initial state of the vm is that it starts
+        //from boot (not sure why he should have to do that though -- who cares if
+        //he initiates the vm in state 5? Vicky will pass the same input bits as he
+        //does regardless, so it should still operate correctly and give her the
+        //agreed upon result)
+        var program_binary = prompt( `Please enter your program binary. They look like this: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` );
+        var is_valid_json = isValidJson( program_binary );
+        if ( !is_valid_json ) return alert( `You entered an invalid binary, please try again and ensure it has 163 bits in this format: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]` );
+        program_binary = JSON.parse( program_binary );
+        if ( program_binary.length != 163 ) return alert( `You entered a binary with the wrong number of bits, please try again and ensure it has 163 bits` );
+        var assembly_bits_prep = program_binary.splice( 35 );
+        var bytes_to_chop_off = prompt( `There are 16 bytes of ram, labeled 0, 1, 2, 3, etc. up to 15. Your Assembly code can have up to 16 commands, where each one goes into one of these bytes of ram, and your code can also initialize a byte of ram to a number. Currently, this site is prepared to send the contents of *every byte of ram* to your counterparty, thus revealing your entire program to them, including any parts (such as numeric inputs) which you may want to keep hidden so you can get some money from Vicky by revealing them to her later as inputs that make the program produce some result. Therefore, if there are any bytes of ram you want to keep hidden, enter them in this format: [13, 14, 15]` );
+        if ( bytes_to_chop_off[ 0 ] != "[" ) return alert( `You entered your bytes to keep hidden in an invalid format, please try again and ensure you use this format: [13, 14, 15]` );
+        var is_valid_json = isValidJson( bytes_to_chop_off );
+        if ( !is_valid_json ) return alert( `You entered your bytes to keep hidden in an invalid format, please try again and ensure you use this format: [13, 14, 15]` );
+        bytes_to_chop_off = JSON.parse( bytes_to_chop_off );
+        var bits_to_chop_off = [];
+        bytes_to_chop_off.forEach( item => {var i; for ( i=0; i<8; i++ ) bits_to_chop_off.push( item * 8 + i );});
+        var assembly_bits = {}
+        assembly_bits_prep.forEach( ( item, index ) => {if ( !bits_to_chop_off.includes( index ) ) assembly_bits[ String( index ) ] = item );}
+        console.log( "assembly_bits:", assembly_bits );
         var remaining_ram_bits = "0".repeat( 120 ).split( "" );
-        //smaller version of the above: "0".repeat( 120 ).split( "" );
-        assembly_bits.forEach( (item, index ) => {console.log( "preimages for this position:", initial_commitment_preimages[ 35 + index ], "preimage I am choosing:", initial_commitment_preimages[ 35 + index ][ item ] ); assembly_preimages.push( initial_commitment_preimages[ 35 + index ][ item ] )});
+        var assembly_preimages = [];
+        Object.keys( assembly_bits ).forEach( ( item ) => assembly_preimages.push( initial_commitment_preimages[ 35 + Number( item ) ][ assembly_bits[ item ] ] ));
         console.log( "assembly_preimages:", assembly_preimages );
         var preimage_positions = [0, 1, 2, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162];
         var intended_output_preimages = [0,0,0,1,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
