@@ -83,9 +83,8 @@ if ($('.cpu_8bit_64_cycles_program')) {
             splittened.splice( splittened.indexOf( "A" ), 2 );
             if ( splittened.includes( "A" ) ) return alert( `You included A more than once, which is not allowed. Try again` );
         }
-        splittened.join( "" );
+        output_bytes_to_reveal = splittened.join( "" );
         console.log( "includes_a, right?", includes_a );
-        output_bytes_to_reveal = splittened;
         console.log( "the json:", output_bytes_to_reveal );
         var is_valid_json = isValidJson( output_bytes_to_reveal );
         if ( !is_valid_json ) return alert( `You entered those bytes in an invalid format, please try again and ensure you use this format: [A, 14, 15]` );
