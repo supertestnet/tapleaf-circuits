@@ -65,7 +65,7 @@ if ($('.cpu_8bit_64_cycles_program')) {
         var bits_to_chop_off = [];
         bytes_to_chop_off.forEach( item => {var i; for ( i=0; i<8; i++ ) bits_to_chop_off.push( item * 8 + i );});
         var assembly_bits = {}
-        assembly_bits_prep.forEach( ( item, index ) => {if ( !bits_to_chop_off.includes( index ) ) assembly_bits[ String( index ) ] = item;} )
+        assembly_bits_prep.forEach( ( item, index ) => {if ( !bits_to_chop_off.includes( index ) ) assembly_bits[ String( index ) ] = item;});
         console.log( "assembly_bits:", assembly_bits );
         var remaining_ram_bits = "0".repeat( 120 ).split( "" );
         var assembly_preimages = [];
