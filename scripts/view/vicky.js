@@ -204,10 +204,12 @@ async function handlePromise(json) {
         if ( !( "assembly" in json ) ) return alert( `Aborting because your counterparty did not send you the Assembly program they want to run` );
         //Vicky needs to take json[ "assembly" ] and add its contents to
         //preimages_from_paul, but only if she sees that they actually correspond
-        //to the hashes in wires 35 onward til there are no more assembly bits
+        //to the hashes in wires 35 onward (excluding the bits not excluded from
+        //json[ "assembly_bits_included" ])
         if ( json[ "assembly" ].length % 8 ) return alert( `Aborting because your counterparty sent you an invalid Assembly program to run` );
+        if ( json[ "assembly_bits_included" ] % 8 ) return alert( `Aborting because your counterparty sent you an invalid Assembly program to run` );
         var program_hashes = [];
-        json[ "assembly" ].forEach( ( item, index ) => program_hashes.push( initial_commitment_hashes[ 35 + index ] ));
+        json[ "assembly_bits_included" ].forEach( item => program_hashes.push( initial_commitment_hashes[ 35 + item ] ) );
         var all_good = true;
         var index; for ( index=0; index<program_hashes.length; index++ ) {
             var item = program_hashes[ index ];
