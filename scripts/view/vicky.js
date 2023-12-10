@@ -196,6 +196,14 @@ async function handlePromise(json) {
     var message = `Someone wants to run a program with you called "${program}."`;
     message += " " + programs[program].promise_prompt(outputs, pauls_promise);
     message += ` Do you want to try it?`;
+    //if the program is the 8bit cpu, get the preimages revealed for the
+    //Assembly program being run on the cpu so the verifier can decide
+    //if they want to agree to run that Assembly program. Add the preimages
+    //to preimages_from_paul, then revise the message for the verifier.
+    if ( program == "8bit cpu with 64 cyles" ) {
+        if ( !( "assembly" in json ) ) return alert( `Aborting because your counterparty did not send you the Assembly program they want to run` );
+        console.log( json[ "assembly" ] );
+    }
     var conf = confirm(message);
     if (!conf) {
         window.location.reload();
