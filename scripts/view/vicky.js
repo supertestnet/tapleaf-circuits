@@ -218,7 +218,7 @@ async function handlePromise(json) {
             }
         }
         if ( !all_good ) return alert( `Aborting because your counterparty tried to trick you by making you run an invalid Assembly program` );
-        console.log( "all good!" );
+        json[ "assembly" ].forEach( item => preimages_from_paul.push(item) );
     }
     var conf = confirm(message);
     if (!conf) {
