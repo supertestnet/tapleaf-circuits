@@ -84,6 +84,7 @@ if ($('.cpu_8bit_64_cycles_program')) {
             subsequent_commitment_hashes,
             output_preimages: revealed_output_preimages,
             assembly: assembly_preimages,
+            assembly_bits_included: assembly_bits,
         }
         saveDataToFile(JSON.stringify(message_to_vicky), "promise_file.txt");
     }
