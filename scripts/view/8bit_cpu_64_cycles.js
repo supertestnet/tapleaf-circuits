@@ -87,7 +87,7 @@ if ($('.cpu_8bit_64_cycles_program')) {
         if ( !is_valid_json ) return alert( `You entered those bytes in an invalid format, please try again and ensure you use this format: [A, 14, 15]` );
         output_bytes_to_reveal = JSON.parse( output_bytes_to_reveal );
         var all_nums = true;
-        output_bytes_to_reveal.forEach( item => if ( isNaN( item ) || Number( item ) < 0 || Number( item ) > 15 ) all_nums = false );
+        output_bytes_to_reveal.forEach( item => {if ( isNaN( item ) || Number( item ) < 0 || Number( item ) > 15 ) all_nums = false;} );
         if ( !all_nums ) return alert( `You entered some ram registers that are not numbers, or that are bigger than 15, or that are smaller than 0, none of which is allowed. Try again` );
         var better_output_bytes = [];
         output_bytes_to_reveal.forEach( item => better_output_bytes.push( Number( item ) ) );
