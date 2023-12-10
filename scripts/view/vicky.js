@@ -202,7 +202,6 @@ async function handlePromise(json) {
     //to preimages_from_paul, then revise the message for the verifier.
     if ( program == "8bit cpu with 64 cyles" ) {
         if ( !( "assembly" in json ) ) return alert( `Aborting because your counterparty did not send you the Assembly program they want to run` );
-        console.log( json[ "assembly" ] );
         //Vicky needs to take json[ "assembly" ] and add its contents to
         //preimages_from_paul, but only if she sees that they actually correspond
         //to the hashes in wires 35 onward til there are no more assembly bits
@@ -210,7 +209,14 @@ async function handlePromise(json) {
         var program_hashes = [];
         json[ "assembly" ].forEach( ( item, index ) => program_hashes.push( initial_commitment_hashes[ 35 + index ] ));
         var all_good = true;
-        program_hashes.every( ( item, index ) => {var real_hash = await sha256(hexToBytes(json[ "assembly" ][ index ])); if ( !item.includes( real_hash ) ) {all_good = false; return;} return true;});
+        var index; for ( index=0; index<program_hashes.length; index++ ) {
+            var item = program_hashes[ index ];
+            var real_hash = await sha256(hexToBytes(json[ "assembly" ][ index ]));
+            if ( !item.includes( real_hash ) ) {
+                all_good = false;
+                break;
+            }
+        }
         if ( !all_good ) return alert( `Aborting because your counterparty tried to trick you by making you run an invalid Assembly program` );
         console.log( "all good!" );
     }
